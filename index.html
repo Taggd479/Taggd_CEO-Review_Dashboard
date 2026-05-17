@@ -245,6 +245,12 @@ footer em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;let
   .region-switcher .rs-tab{padding:7px 10px;font-size:10px}
 }
 
+.quarter-switcher .quarter-hint{font-size:10px;color:var(--ink-3);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;padding-top:10px;flex-shrink:0}
+.quarter-switcher .quarter-hint kbd{background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);padding:1px 5px;border-radius:3px;font-family:inherit;font-size:9px}
+
+.q-card.q-dimmed{opacity:0.35;transition:opacity 0.25s}
+.q-card.q-active{box-shadow:inset 0 0 0 1px var(--accent);transition:box-shadow 0.25s}
+
 /* PH dropdown */
 .region-switcher.ph-row{margin-bottom:32px}
 .ph-dropdown-wrap{display:flex;align-items:center;gap:10px;position:relative}
@@ -417,25 +423,29 @@ footer em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;let
     </div>
   </div>
 
-  <!-- LEADER SWITCHER -->
-  <div class="region-switcher">
-    <span class="rs-label">Leader Wise</span>
-    <div class="rs-tabs" id="leaderTabs">
-      <!-- populated dynamically -->
-    </div>
-  </div>
-
-  <!-- REGION SWITCHER -->
-  <div class="region-switcher">
-    <span class="rs-label">View By</span>
-    <div class="rs-tabs" id="regionTabs">
-      <!-- populated dynamically -->
-    </div>
-  </div>
-
   <!-- DROPDOWN + TOGGLE FILTER ROW -->
   <div class="region-switcher filter-row">
     <span class="rs-label">Filters</span>
+    
+    <div class="filter-group">
+      <label class="fg-label">Leader Wise</label>
+      <div class="ph-dropdown-wrap">
+        <select id="leaderSelect" class="ph-select">
+          <!-- populated dynamically -->
+        </select>
+        <span class="ph-count-badge" id="leaderCountBadge">—</span>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label class="fg-label">View By</label>
+      <div class="ph-dropdown-wrap">
+        <select id="regionSelect" class="ph-select">
+          <!-- populated dynamically -->
+        </select>
+        <span class="ph-count-badge" id="regionCountBadge">—</span>
+      </div>
+    </div>
     
     <div class="filter-group">
       <label class="fg-label">PH Wise</label>
@@ -536,10 +546,23 @@ footer em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;let
     </div>
   </div>
 
+  <!-- QUARTER FILTER -->
+  <div class="region-switcher quarter-switcher">
+    <span class="rs-label">Quarter</span>
+    <div class="rs-tabs" id="quarterTabs">
+      <button class="rs-tab active" data-quarter="all">All <span class="rs-count">4Q</span></button>
+      <button class="rs-tab" data-quarter="Q1">Q1</button>
+      <button class="rs-tab" data-quarter="Q2">Q2</button>
+      <button class="rs-tab" data-quarter="Q3">Q3</button>
+      <button class="rs-tab" data-quarter="Q4">Q4</button>
+    </div>
+    <span class="quarter-hint">Tip: <kbd>Ctrl</kbd>+click for multi-select</span>
+  </div>
+
   <!-- KPI BAND -->
   <div class="section-label">
     <span class="num">i.</span>
-    <span class="lbl">Headline Metrics · Annual</span>
+    <span class="lbl" id="kpiSectionLabel">Headline Metrics · Annual</span>
     <span class="line"></span>
   </div>
   <div class="kpi-grid" id="kpiGrid"></div>
@@ -843,7 +866,47 @@ document.getElementById('meta-accounts').textContent = RAW.length;
 document.getElementById('meta-active').textContent = activeAccounts;
 
 // ============ KPI Cards ============
+// Returns aggregate metrics for the currently selected quarters.
+// Empty array = all 4 quarters (annual).
+function getActiveAggregate(){
+  const qs = selectedQuarters.length === 0 ? ['Q1','Q2','Q3','Q4'] : [...selectedQuarters];
+  if(qs.length === 4) return { ...totals.Total, _qs: qs, _label: 'Annual' };
+  if(qs.length === 1) return { ...totals[qs[0]], _qs: qs, _label: qs[0] };
+  // Multi-quarter aggregate: sum amounts, average rates
+  let budRev=0, fcRev=0, cost=0, hc=0;
+  let ppcSum=0, ppcN=0, rpSum=0, rpN=0, tgSum=0, tgN=0, rphSum=0, rphN=0;
+  RAW.forEach(c => {
+    qs.forEach(q => {
+      if(!c[q]) return;
+      budRev += c[q].budRev || 0;
+      fcRev += c[q].fcRev || 0;
+      cost += c[q].cost || 0;
+      if(c[q].ppc > 0){ ppcSum += c[q].ppc; ppcN++; }
+      if(c[q].revPro > 0){ rpSum += c[q].revPro; rpN++; }
+      if(c[q].taggd > 0){ tgSum += c[q].taggd; tgN++; }
+      if(c[q].rph > 0){ rphSum += c[q].rph; rphN++; }
+    });
+  });
+  // HC: average across selected quarters (HC is a stock, not flow)
+  let hcSum = 0;
+  qs.forEach(q => { hcSum += totals[q]?.hc || 0; });
+  hc = hcSum / qs.length;
+  return {
+    budRev, fcRev, cost, hc,
+    rev: fcRev,
+    cm: fcRev ? cost/fcRev : 0,
+    ppc: ppcN ? ppcSum/ppcN : 0,
+    revPro: rpN ? rpSum/rpN : 0,
+    rph: rphN ? rphSum/rphN : 0,
+    taggd: tgN ? tgSum/tgN : 0,
+    achievement: budRev ? fcRev/budRev : 0,
+    _qs: qs,
+    _label: qs.join('+'),
+  };
+}
+
 function buildKPIs(){
+  const active = getActiveAggregate();
   const q4 = totals.Q4, q3 = totals.Q3;
   const budDelta = q3.budRev ? (q4.budRev - q3.budRev)/q3.budRev : 0;
   const fcDelta = q3.fcRev ? (q4.fcRev - q3.fcRev)/q3.fcRev : 0;
@@ -852,13 +915,21 @@ function buildKPIs(){
   const hcDelta = q3.hc ? (q4.hc - q3.hc)/q3.hc : 0;
   const rpDelta = q3.revPro ? (q4.revPro - q3.revPro)/q3.revPro : 0;
   
+  // Update the section header label
+  const sectionLbl = document.getElementById('kpiSectionLabel');
+  if(sectionLbl){
+    sectionLbl.textContent = 'Headline Metrics · ' + (active._qs.length === 4 ? 'Annual' : active._qs.join(' + '));
+  }
+  
+  const periodSub = active._qs.length === 4 ? 'Annual' : active._qs.length === 1 ? active._qs[0] + ' only' : active._qs.join(' + ');
+  
   const cards = [
-    {label:'Budget Revenue', icon:'a', value: '₹'+fmt.inrLakh(totals.Total.budRev), sub:'Annual plan', delta: budDelta, deltaLabel:'vs Q3', metric:'budRev'},
-    {label:'Forecast Revenue', icon:'b', value: '₹'+fmt.inrLakh(totals.Total.fcRev), sub: 'Achievement '+fmt.pct(totals.Total.achievement), delta: fcDelta, deltaLabel:'vs Q3', metric:'fcRev'},
-    {label:'CM% (Cost / Rev)', icon:'c', value: fmt.pct(totals.Total.cm), sub:'Lower is better', delta: cmDelta/100, deltaLabel:'pp vs Q3', isPP:true, metric:'cm', invert:true},
-    {label:'PPC', icon:'d', value: '₹'+fmt.inr(totals.Total.ppc), sub:'Per-person cost', delta: ppcDelta, deltaLabel:'vs Q3', metric:'ppc', invert:true},
-    {label:'Head Count', icon:'e', value: Math.round(totals.Total.hc).toLocaleString('en-IN'), sub:'Sum across accounts', delta: hcDelta, deltaLabel:'vs Q3', metric:'hc'},
-    {label:'Rev Productivity', icon:'f', value: totals.Total.revPro.toFixed(2), sub:'Annual avg multiple', delta: rpDelta, deltaLabel:'vs Q3', metric:'revPro'},
+    {label:'Budget Revenue', icon:'a', value: '₹'+fmt.inrLakh(active.budRev), sub: periodSub + ' plan', delta: budDelta, deltaLabel:'vs Q3', metric:'budRev'},
+    {label:'Forecast Revenue', icon:'b', value: '₹'+fmt.inrLakh(active.fcRev), sub: 'Achievement '+fmt.pct(active.achievement), delta: fcDelta, deltaLabel:'vs Q3', metric:'fcRev'},
+    {label:'CM% (Cost / Rev)', icon:'c', value: fmt.pct(active.cm), sub:'Lower is better', delta: cmDelta/100, deltaLabel:'pp vs Q3', isPP:true, metric:'cm', invert:true},
+    {label:'PPC', icon:'d', value: '₹'+fmt.inr(active.ppc), sub:'Per-person cost', delta: ppcDelta, deltaLabel:'vs Q3', metric:'ppc', invert:true},
+    {label:'Head Count', icon:'e', value: Math.round(active.hc).toLocaleString('en-IN'), sub: active._qs.length === 4 ? 'Sum across accounts' : periodSub, delta: hcDelta, deltaLabel:'vs Q3', metric:'hc'},
+    {label:'Rev Productivity', icon:'f', value: active.revPro.toFixed(2), sub: active._qs.length === 4 ? 'Annual avg multiple' : periodSub + ' avg', delta: rpDelta, deltaLabel:'vs Q3', metric:'revPro'},
   ];
   
   const container = document.getElementById('kpiGrid');
@@ -898,19 +969,22 @@ function buildQuarters(){
   const revs = QUARTERS.map(q=>totals[q].fcRev);
   const peakIdx = revs.indexOf(Math.max(...revs));
   const lowIdx = revs.indexOf(Math.min(...revs));
+  const activeQs = selectedQuarters.length === 0 ? QUARTERS : selectedQuarters;
+  const hasFilter = selectedQuarters.length > 0;
   
   document.getElementById('quarterStrip').innerHTML = QUARTERS.map((q,i)=>{
     const t = totals[q];
     const tag = i===peakIdx ? '<span class="q-stat peak">Peak</span>' : i===lowIdx ? '<span class="q-stat low">Low</span>' : '';
     const achPct = t.budRev ? (t.fcRev/t.budRev*100) : 0;
-    // Variance = Forecast - Budget (positive = beat plan, negative = shortfall)
     const variance = t.fcRev - t.budRev;
     const varPct = t.budRev ? (variance / t.budRev * 100) : 0;
     let varCls = 'flat';
     if(variance > 0.01) varCls = 'pos';
     else if(variance < -0.01) varCls = 'neg';
     const varSign = variance >= 0 ? '+' : '';
-    return `<div class="q-card">
+    // Apply dimmed style to quarters NOT in selection (when a filter is active)
+    const dimCls = hasFilter && !activeQs.includes(q) ? 'q-dimmed' : (hasFilter && activeQs.includes(q) ? 'q-active' : '');
+    return `<div class="q-card ${dimCls}">
       <div class="q-tag"><span class="q-name">${q}</span>${tag}</div>
       <div class="q-rev">₹${fmt.inrLakh(t.fcRev)}<span class="unit">fc</span></div>
       <div class="q-variance ${varCls}">
@@ -1823,6 +1897,7 @@ const ORIGINAL_RAW_ALL = JSON.parse(JSON.stringify(RAW));
 let currentRegion = 'all';
 let currentPH = 'all';
 let currentLeader = 'all';
+let selectedQuarters = []; // empty array = "All quarters" (annual aggregate)
 let selectedAccounts = []; // empty = all; non-empty = explicit multi-select
 let pendingSelectedAccounts = [];
 // Flag filters now work as multi-selects: empty = "all in scope OR no filter applied"
@@ -1894,58 +1969,60 @@ function getAvailableLeaders(){
 }
 
 function buildRegionTabs(){
+  // Renamed conceptually to dropdown but keeping function name for compatibility
   const { regions, total } = getAvailableRegions();
-  const tabsHtml = [`<button class="rs-tab ${currentRegion==='all'?'active':''}" data-region="all">All <span class="rs-count">${total}</span></button>`];
+  const sel = document.getElementById('regionSelect');
+  if(!sel) return;
+  const opts = [`<option value="all" ${currentRegion==='all'?'selected':''}>All Regions (${total} accounts)</option>`];
   regions.forEach(([name,count]) => {
-    tabsHtml.push(`<button class="rs-tab ${currentRegion===name?'active':''}" data-region="${name}">${name} <span class="rs-count">${count}</span></button>`);
+    opts.push(`<option value="${name}" ${currentRegion===name?'selected':''}>${name} — ${count} ${count===1?'account':'accounts'}</option>`);
   });
-  document.getElementById('regionTabs').innerHTML = tabsHtml.join('');
-  document.querySelectorAll('#regionTabs .rs-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(btn.classList.contains('active')) return;
-      document.querySelectorAll('#regionTabs .rs-tab').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentRegion = btn.dataset.region;
-      refreshDashboard();
-    });
-  });
+  sel.innerHTML = opts.join('');
+  const badge = document.getElementById('regionCountBadge');
+  if(badge){
+    if(currentRegion === 'all'){ badge.textContent = total; }
+    else { const found = regions.find(([n,_])=>n===currentRegion); badge.textContent = found ? found[1] : 0; }
+  }
+  sel.onchange = () => {
+    currentRegion = sel.value;
+    refreshDashboard();
+  };
 }
 
 function buildLeaderTabs(){
   const { leaders, total } = getAvailableLeaders();
-  const tabsHtml = [`<button class="rs-tab ${currentLeader==='all'?'active':''}" data-leader="all">All <span class="rs-count">${total}</span></button>`];
+  const sel = document.getElementById('leaderSelect');
+  if(!sel) return;
+  const opts = [`<option value="all" ${currentLeader==='all'?'selected':''}>All Leaders (${total} accounts)</option>`];
   leaders.forEach(([name,count]) => {
-    tabsHtml.push(`<button class="rs-tab ${currentLeader===name?'active':''}" data-leader="${name}">${name} <span class="rs-count">${count}</span></button>`);
+    opts.push(`<option value="${name}" ${currentLeader===name?'selected':''}>${name} — ${count} ${count===1?'account':'accounts'}</option>`);
   });
-  document.getElementById('leaderTabs').innerHTML = tabsHtml.join('');
-  document.querySelectorAll('#leaderTabs .rs-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(btn.classList.contains('active')) return;
-      document.querySelectorAll('#leaderTabs .rs-tab').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentLeader = btn.dataset.leader;
-      refreshDashboard();
-    });
-  });
+  sel.innerHTML = opts.join('');
+  const badge = document.getElementById('leaderCountBadge');
+  if(badge){
+    if(currentLeader === 'all'){ badge.textContent = total; }
+    else { const found = leaders.find(([n,_])=>n===currentLeader); badge.textContent = found ? found[1] : 0; }
+  }
+  sel.onchange = () => {
+    currentLeader = sel.value;
+    refreshDashboard();
+  };
 }
 
 function buildPHDropdown(){
   const { phs, total } = getAvailablePHs();
   const sel = document.getElementById('phSelect');
+  if(!sel) return;
   const opts = [`<option value="all" ${currentPH==='all'?'selected':''}>All PHs (${total} accounts)</option>`];
   phs.forEach(([name,count]) => {
     opts.push(`<option value="${name}" ${currentPH===name?'selected':''}>${name} — ${count} ${count===1?'account':'accounts'}</option>`);
   });
   sel.innerHTML = opts.join('');
-  // Update badge
   const badge = document.getElementById('phCountBadge');
-  if(currentPH === 'all'){
-    badge.textContent = total;
-  } else {
-    const found = phs.find(([n,_])=>n===currentPH);
-    badge.textContent = found ? found[1] : 0;
+  if(badge){
+    if(currentPH === 'all'){ badge.textContent = total; }
+    else { const found = phs.find(([n,_])=>n===currentPH); badge.textContent = found ? found[1] : 0; }
   }
-  // Bind change
   sel.onchange = () => {
     currentPH = sel.value;
     refreshDashboard();
@@ -2510,6 +2587,7 @@ function handleFileUpload(event){
       currentRegion = 'all';
       currentPH = 'all';
       currentLeader = 'all';
+      selectedQuarters = [];
       selectedAccounts = [];
       pendingSelectedAccounts = [];
       ['new','top10','red'].forEach(k => { flagState[k].mode = 'off'; flagState[k].selected = []; flagState[k].pending = []; });
@@ -2550,6 +2628,7 @@ function resetData(){
   currentRegion = 'all';
   currentPH = 'all';
   currentLeader = 'all';
+  selectedQuarters = [];
   selectedAccounts = [];
   pendingSelectedAccounts = [];
   ['new','top10','red'].forEach(k => { flagState[k].mode = 'off'; flagState[k].selected = []; flagState[k].pending = []; });
@@ -2562,6 +2641,41 @@ function resetData(){
   showToast('Reset to original data', 'success');
 }
 
+function buildQuarterTabs(){
+  const tabs = document.querySelectorAll('#quarterTabs .rs-tab');
+  // Update active state visually
+  tabs.forEach(btn => {
+    const q = btn.dataset.quarter;
+    const isActive = (q === 'all' && selectedQuarters.length === 0) || selectedQuarters.includes(q);
+    btn.classList.toggle('active', isActive);
+  });
+  // Bind once
+  if(document.getElementById('quarterTabs').dataset.bound) return;
+  document.getElementById('quarterTabs').dataset.bound = '1';
+  tabs.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const q = btn.dataset.quarter;
+      if(q === 'all'){
+        selectedQuarters = [];
+      } else if(e.ctrlKey || e.metaKey){
+        // Multi-select: add or remove from selection
+        const idx = selectedQuarters.indexOf(q);
+        if(idx >= 0) selectedQuarters.splice(idx, 1);
+        else selectedQuarters.push(q);
+        // If all 4 selected → treat as "all" (deselected)
+        if(selectedQuarters.length === 4) selectedQuarters = [];
+      } else {
+        // Single select
+        selectedQuarters = [q];
+      }
+      buildQuarterTabs();
+      // Refresh affected sections (no need to recompute totals — same quarter data, just different display)
+      buildKPIs();
+      buildQuarters();
+    });
+  });
+}
+
 // Initial setup
 buildRegionTabs();
 buildLeaderTabs();
@@ -2570,6 +2684,7 @@ buildAccountDropdown();
 buildFlagToggles();
 bindAccountMultiSelect();
 bindMultiSelectOutsideClicks();
+buildQuarterTabs();
 
 // Initial filter & status
 applyRegionFilter();
@@ -2623,6 +2738,7 @@ async function autoFetchExcel(){
       currentRegion = 'all';
       currentPH = 'all';
       currentLeader = 'all';
+      selectedQuarters = [];
       selectedAccounts = [];
       pendingSelectedAccounts = [];
       ['new','top10','red'].forEach(k => { flagState[k].mode = 'off'; flagState[k].selected = []; flagState[k].pending = []; });
