@@ -2583,6 +2583,63 @@ buildInsights();
 buildGovernance();
 buildTable();
 
+// ============ AUTO-FETCH FROM SAME-FOLDER EXCEL ============
+// On page load, try to fetch CEO_Review.xlsx from the same directory as this HTML file.
+// This makes the dashboard auto-refresh when deployed to GitHub Pages: just commit a new
+// CEO_Review.xlsx to the repo and the next page visit shows updated data.
+// If the fetch fails (e.g., file opened locally with file:// or Excel missing), we silently
+// fall back to the embedded data so the dashboard always renders something.
+async function autoFetchExcel(){
+  // Skip when the page is opened directly from disk (file:// protocol).
+  // fetch() doesn't reliably work with file:// in most browsers; the Load File button
+  // remains available as the manual fallback for local viewing.
+  if(location.protocol === 'file:'){
+    console.log('[AutoFetch] Skipped: page opened via file:// — use Load File button instead.');
+    return;
+  }
+  
+  const candidates = ['CEO_Review.xlsx', 'CEO Review.xlsx', './CEO_Review.xlsx', './CEO Review.xlsx', 'data/CEO_Review.xlsx'];
+  for(const url of candidates){
+    try{
+      // Add a cache-busting query so updates appear immediately after a push
+      const bust = '?t=' + Date.now();
+      const response = await fetch(url + bust, { cache: 'no-store' });
+      if(!response.ok) continue;
+      const buffer = await response.arrayBuffer();
+      console.log('[AutoFetch] Successfully fetched', url, '(' + buffer.byteLength + ' bytes)');
+      
+      const data = new Uint8Array(buffer);
+      const wb = XLSX.read(data, {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const parsed = parseCEOReviewSheet(sheet);
+      
+      RAW_ALL.length = 0;
+      parsed.forEach(c => RAW_ALL.push(c));
+      currentFileName = 'CEO_Review.xlsx (live)';
+      currentRegion = 'all';
+      currentPH = 'all';
+      currentLeader = 'all';
+      selectedAccounts = [];
+      pendingSelectedAccounts = [];
+      ['new','top10','red'].forEach(k => { flagState[k].mode = 'off'; flagState[k].selected = []; flagState[k].pending = []; });
+      
+      buildRegionTabs();
+      buildLeaderTabs();
+      buildPHDropdown();
+      buildAccountDropdown();
+      buildFlagToggles();
+      refreshDashboard();
+      setUpdatedTimestamp();
+      console.log('[AutoFetch] Dashboard refreshed with', parsed.length, 'accounts from repo.');
+      return;
+    } catch(err){
+      console.log('[AutoFetch] Tried', url, '— not available:', err.message);
+    }
+  }
+  console.log('[AutoFetch] No remote Excel found in repo. Showing embedded data; use Load File to override.');
+}
+autoFetchExcel();
+
 // Governance table search
 document.getElementById('govSearchInput')?.addEventListener('input', e => {
   govSearchTerm = e.target.value;
