@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEO Review · Pan-India Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0d0e10;
+  --bg-2:#15171a;
+  --panel:#1a1d21;
+  --panel-2:#22262b;
+  --line:#2a2f35;
+  --line-2:#3a4047;
+  --ink:#f4f1ea;
+  --ink-2:#b8b3a8;
+  --ink-3:#7a7468;
+  --accent:#d4ff3a;
+  --accent-2:#ff6b3d;
+  --good:#7dd87f;
+  --bad:#ff5a5a;
+  --warn:#f4c542;
+  --gold:#c9a961;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Inter Tight',-apple-system,sans-serif;font-feature-settings:'ss01','cv11';-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:
+  radial-gradient(ellipse 800px 500px at 15% 0%, rgba(212,255,58,0.04), transparent 60%),
+  radial-gradient(ellipse 600px 400px at 95% 30%, rgba(255,107,61,0.03), transparent 50%),
+  var(--bg)}
+.serif{font-family:'Fraunces',serif;font-feature-settings:'ss01'}
+.mono{font-family:'JetBrains Mono',monospace;font-feature-settings:'ss02','zero','cv02'}
+
+/* HEADER */
+.masthead{padding:32px 40px 24px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.masthead::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.masthead-row{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-mark{width:36px;height:36px;border:1.5px solid var(--accent);border-radius:50%;display:grid;place-items:center;position:relative}
+.brand-mark::after{content:'';width:8px;height:8px;background:var(--accent);border-radius:50%}
+.brand-text{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-2)}
+.brand-text strong{color:var(--ink);font-weight:600}
+.title-block h1{font-family:'Fraunces',serif;font-size:clamp(38px,5vw,68px);font-weight:500;letter-spacing:-0.03em;line-height:0.95;margin-top:18px}
+.title-block h1 em{font-style:italic;color:var(--accent);font-weight:400}
+.title-meta{display:flex;gap:32px;margin-top:18px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3)}
+.title-meta span strong{color:var(--ink-2);font-weight:500;display:block;font-size:13px;letter-spacing:0;text-transform:none;margin-top:2px;font-family:'JetBrains Mono',monospace}
+.fy-stamp{font-family:'Fraunces',serif;font-size:14px;font-style:italic;color:var(--ink-2);text-align:right;border-left:2px solid var(--accent);padding-left:16px}
+.fy-stamp strong{display:block;font-style:normal;font-size:32px;font-weight:600;color:var(--ink);letter-spacing:-0.02em;line-height:1}
+.fy-stamp .fy-label{font-size:10px;text-transform:uppercase;letter-spacing:0.2em;font-style:normal;color:var(--ink-3);margin-top:6px;font-family:'Inter Tight',sans-serif}
+
+.masthead-right{display:flex;flex-direction:column;align-items:flex-end;gap:14px}
+.updated-stamp{display:inline-flex;flex-direction:column;align-items:flex-end;gap:3px;padding:8px 14px;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;position:relative}
+.updated-stamp::before{content:'';position:absolute;top:50%;left:-3px;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.updated-stamp .us-label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-3);font-weight:700;font-family:'Inter Tight',sans-serif}
+.updated-stamp .us-value{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);font-weight:600;letter-spacing:0.02em}
+
+/* MAIN */
+.container{padding:32px 40px 80px;max-width:1600px;margin:0 auto}
+.section-label{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.section-label .num{font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--accent)}
+.section-label .lbl{font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.section-label .line{flex:1;height:1px;background:var(--line)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:48px}
+.kpi{background:var(--panel);padding:22px 20px;position:relative;transition:all 0.3s}
+.kpi:hover{background:var(--panel-2)}
+.kpi-label{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kpi-label .kpi-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi-label .kpi-icon{font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:var(--accent);text-transform:none;letter-spacing:0;flex-shrink:0}
+.kpi-value{font-family:'Fraunces',serif;font-size:30px;font-weight:500;letter-spacing:-0.02em;margin-top:14px;line-height:1}
+.kpi-unit{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-3);font-weight:400}
+.kpi-sub{margin-top:14px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2);font-family:'JetBrains Mono',monospace}
+.kpi-sub .delta{padding:2px 6px;border-radius:3px;font-weight:600;font-size:10px}
+.delta.up{background:rgba(125,216,127,0.15);color:var(--good)}
+.delta.dn{background:rgba(255,90,90,0.15);color:var(--bad)}
+.delta.flat{background:rgba(184,179,168,0.1);color:var(--ink-2)}
+.kpi-spark{height:28px;margin-top:12px}
+
+/* CHART AREA */
+.chart-row{display:grid;grid-template-columns:1.5fr 1fr;gap:24px;margin-bottom:48px}
+.panel{background:var(--panel);border:1px solid var(--line);padding:24px;position:relative}
+.panel-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.panel-title{font-family:'Fraunces',serif;font-size:22px;font-weight:500;letter-spacing:-0.01em}
+.panel-title em{font-style:italic;color:var(--accent)}
+.panel-sub{font-size:11px;color:var(--ink-3);margin-top:4px;letter-spacing:0.05em}
+.metric-tabs{display:flex;gap:2px;background:var(--bg-2);padding:3px;border-radius:6px}
+.tab{padding:6px 12px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-3);background:transparent;border:none;cursor:pointer;border-radius:4px;font-weight:600;transition:all 0.2s;font-family:inherit}
+.tab.active{background:var(--accent);color:#000}
+.tab:hover:not(.active){color:var(--ink)}
+.chart-box{position:relative;height:360px}
+
+/* QUARTER STRIP */
+.quarter-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:48px}
+.q-card{background:var(--panel);padding:22px 20px;position:relative;cursor:pointer;transition:all 0.25s}
+.q-card:hover{background:var(--panel-2);transform:translateY(-2px)}
+.q-card::before{content:'';position:absolute;top:0;left:0;width:0;height:2px;background:var(--accent);transition:width 0.4s}
+.q-card:hover::before{width:100%}
+.q-tag{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.q-name{font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--accent)}
+.q-stat{font-size:9px;padding:3px 7px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700}
+.q-stat.peak{background:rgba(212,255,58,0.15);color:var(--accent)}
+.q-stat.low{background:rgba(255,107,61,0.15);color:var(--accent-2)}
+.q-rev{font-family:'Fraunces',serif;font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1}
+.q-rev .unit{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-3);font-weight:400;margin-left:4px}
+.q-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 12px;margin-top:18px;padding-top:14px;border-top:1px dashed var(--line-2)}
+.q-meta-item .lbl{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.q-meta-item .val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);margin-top:3px;font-weight:500}
+
+/* Quarter card variance row */
+.q-variance{display:flex;align-items:baseline;gap:8px;margin-top:8px;padding:8px 10px;border-radius:4px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace}
+.q-variance .var-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.q-variance .var-amount{font-size:13px;font-weight:600}
+.q-variance .var-pct{font-size:11px;font-weight:500;margin-left:auto;padding:1px 6px;border-radius:3px}
+.q-variance.pos{background:rgba(125,216,127,0.08);border:1px solid rgba(125,216,127,0.25)}
+.q-variance.pos .var-amount{color:var(--good)}
+.q-variance.pos .var-pct{background:rgba(125,216,127,0.18);color:var(--good)}
+.q-variance.neg{background:rgba(255,90,90,0.08);border:1px solid rgba(255,90,90,0.25)}
+.q-variance.neg .var-amount{color:var(--bad)}
+.q-variance.neg .var-pct{background:rgba(255,90,90,0.18);color:var(--bad)}
+.q-variance.flat{background:rgba(184,179,168,0.06);border:1px solid var(--line-2)}
+.q-variance.flat .var-amount{color:var(--ink-2)}
+.q-variance.flat .var-pct{background:rgba(184,179,168,0.12);color:var(--ink-2)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:12px 14px;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--line-2);background:var(--bg-2);position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{color:var(--accent)}
+thead th.sorted{color:var(--accent)}
+tbody td{padding:14px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap}
+tbody td.client-name{font-family:'Inter Tight',sans-serif;font-weight:500;font-size:13px;color:var(--ink)}
+tbody tr{transition:background 0.15s}
+tbody tr:hover{background:var(--bg-2)}
+tbody tr.leadership td.client-name::before{content:'◆ ';color:var(--gold);margin-right:4px}
+.cell-num{text-align:right}
+.cell-pos{color:var(--good)}
+.cell-neg{color:var(--bad)}
+.search-bar{display:flex;gap:10px;align-items:center}
+.search-input{background:var(--bg-2);border:1px solid var(--line);padding:8px 12px;color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px;border-radius:4px;width:200px;outline:none;transition:border-color 0.2s}
+.search-input:focus{border-color:var(--accent)}
+.filter-btn{background:var(--bg-2);border:1px solid var(--line);padding:8px 14px;color:var(--ink-2);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;cursor:pointer;border-radius:4px;font-family:inherit;transition:all 0.2s}
+.filter-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.filter-btn:hover:not(.active){color:var(--ink);border-color:var(--line-2)}
+
+/* INSIGHTS */
+.insights-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:48px}
+.insight{background:var(--panel);border:1px solid var(--line);padding:20px;position:relative;overflow:hidden}
+.insight::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--accent);transition:height 0.5s}
+.insight:hover::before{height:100%}
+.insight-tag{display:inline-block;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);background:rgba(212,255,58,0.08);padding:3px 8px;border-radius:3px;font-weight:700;margin-bottom:12px}
+.insight-tag.warn{color:var(--warn);background:rgba(244,197,66,0.08)}
+.insight-tag.alert{color:var(--bad);background:rgba(255,90,90,0.08)}
+.insight h3{font-family:'Fraunces',serif;font-size:17px;font-weight:500;line-height:1.25;margin-bottom:10px}
+.insight h3 em{font-style:italic;color:var(--accent)}
+.insight p{font-size:12px;color:var(--ink-2);line-height:1.5}
+.insight-stat{font-family:'Fraunces',serif;font-size:32px;font-weight:600;color:var(--ink);letter-spacing:-0.02em;line-height:1;margin:14px 0 4px}
+.insight-stat .unit{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-3)}
+
+/* TOP CLIENTS */
+.bars{display:flex;flex-direction:column;gap:10px;padding:8px 0}
+.bar-row{display:grid;grid-template-columns:140px 1fr 80px;gap:14px;align-items:center;font-size:12px}
+.bar-name{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{background:var(--bg-2);height:22px;position:relative;border-radius:2px;overflow:hidden}
+.bar-fill{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--accent),#9bd026);border-radius:2px;transition:width 1s cubic-bezier(0.16,1,0.3,1)}
+.bar-fill.neg{background:linear-gradient(90deg,#7a3030,var(--bad))}
+.bar-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-2);text-align:right;font-weight:500}
+
+/* TAGGD SECTION */
+.taggd-row{display:grid;grid-template-columns:1fr 2fr;gap:24px;margin-bottom:48px}
+.taggd-stats{display:flex;flex-direction:column}
+.taggd-headline{font-family:'Fraunces',serif;font-size:72px;font-weight:600;letter-spacing:-0.04em;line-height:0.9;color:var(--accent);margin:8px 0 4px}
+.taggd-headline .x-mark{font-style:italic;font-size:40px;color:var(--ink-2);margin-left:4px;font-weight:400}
+.taggd-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;padding-top:18px;margin-top:auto;border-top:1px dashed var(--line-2)}
+.taggd-meta-item .lbl{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.taggd-meta-item .val{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);margin-top:4px;font-weight:500}
+.taggd-meta-item .val .sub{font-size:10px;color:var(--ink-3);margin-left:4px}
+.taggd-legend{display:flex;flex-direction:column;gap:6px;margin-top:18px;font-size:10px;color:var(--ink-3);font-family:'JetBrains Mono',monospace}
+.taggd-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.dot-good{background:var(--good)}
+.dot-bad{background:var(--bad)}
+.dot-mid{background:var(--ink-3)}
+.taggd-bars{display:flex;flex-direction:column;gap:7px;padding:4px 0;max-height:340px;overflow-y:auto}
+.taggd-bars::-webkit-scrollbar{width:6px}
+.taggd-bars::-webkit-scrollbar-track{background:var(--bg-2)}
+.taggd-bars::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+.tg-row{display:grid;grid-template-columns:24px 160px 1fr;gap:14px;align-items:center;font-size:12px}
+.tg-row-with-val{grid-template-columns:24px 160px 1fr 60px}
+.tg-rank{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-3);text-align:right}
+.tg-name{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.tg-track{background:var(--bg-2);height:18px;position:relative;border-radius:2px;overflow:hidden}
+.tg-fill{position:absolute;top:0;left:0;height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(0.16,1,0.3,1)}
+.tg-fill.good{background:linear-gradient(90deg,var(--good),#5fb86a)}
+.tg-fill.bad{background:linear-gradient(90deg,#7a4040,var(--bad))}
+.tg-fill.mid{background:linear-gradient(90deg,var(--accent),#9bd026)}
+.tg-avg-line{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--ink-2);opacity:0.6}
+.tg-avg-line::after{content:'avg';position:absolute;top:-12px;left:-10px;font-size:8px;color:var(--ink-3);letter-spacing:0.1em;text-transform:uppercase;font-family:'Inter Tight',sans-serif}
+.tg-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-2);text-align:right;font-weight:600}
+
+/* FOOTER */
+footer{padding:40px;border-top:1px solid var(--line);text-align:center;color:var(--ink-3);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;margin-top:40px}
+footer em{font-family:'Fraunces',serif;font-style:italic;text-transform:none;letter-spacing:0;color:var(--ink-2)}
+
+@media (max-width:1400px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr)}
+  .insights-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:1200px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .chart-row{grid-template-columns:1fr}
+  .taggd-row{grid-template-columns:1fr}
+  .insights-grid{grid-template-columns:1fr}
+  .quarter-strip{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:640px){
+  .masthead,.container{padding-left:20px;padding-right:20px}
+  .kpi-grid{grid-template-columns:1fr}
+  .quarter-strip{grid-template-columns:1fr}
+}
+
+/* DATA SOURCE PANEL — editable entry point */
+.data-source{display:flex;align-items:center;gap:14px;padding:18px 22px;background:linear-gradient(135deg,var(--panel) 0%,var(--bg-2) 100%);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;margin-bottom:16px;flex-wrap:wrap;position:relative}
+.data-source::after{content:'EDITABLE';position:absolute;top:-7px;right:14px;font-size:8px;font-family:'JetBrains Mono',monospace;letter-spacing:0.2em;background:var(--accent);color:#000;padding:2px 8px;border-radius:2px;font-weight:700}
+.data-source-meta{display:flex;flex-direction:column;gap:4px;flex:1;min-width:240px}
+.data-source-meta .ds-title{font-family:'Fraunces',serif;font-size:15px;font-style:italic;color:var(--ink)}
+.data-source-meta .ds-hint{font-size:11px;color:var(--ink-3);font-family:'JetBrains Mono',monospace}
+
+/* REGION SWITCHER */
+.region-switcher{display:flex;align-items:center;gap:18px;padding:14px 18px;background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:12px;flex-wrap:wrap}
+.region-switcher + .region-switcher{margin-bottom:32px}
+.region-switcher .rs-label{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.region-switcher .rs-tabs{display:flex;gap:4px;background:var(--bg-2);padding:4px;border-radius:6px}
+.region-switcher .rs-tab{background:transparent;border:none;padding:8px 18px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;cursor:pointer;border-radius:4px;font-family:inherit;transition:all 0.2s;display:flex;align-items:center;gap:8px}
+.region-switcher .rs-tab:hover:not(.active){color:var(--ink)}
+.region-switcher .rs-tab.active{background:var(--accent);color:#000}
+.region-switcher .rs-tab.active .rs-count{background:rgba(0,0,0,0.2);color:#000}
+.region-switcher .rs-count{background:var(--line);color:var(--ink-3);padding:2px 7px;border-radius:10px;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:0.05em}
+
+/* PH dropdown */
+.region-switcher.ph-row{margin-bottom:32px}
+.ph-dropdown-wrap{display:flex;align-items:center;gap:10px;position:relative}
+.ph-select{appearance:none;-webkit-appearance:none;background:var(--bg-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d4ff3a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;border:1px solid var(--line-2);color:var(--ink);padding:9px 36px 9px 14px;font-size:12px;letter-spacing:0.05em;font-weight:600;font-family:'Inter Tight',sans-serif;border-radius:5px;cursor:pointer;min-width:240px;transition:border-color 0.2s,background-color 0.2s}
+.ph-select:hover{border-color:var(--accent);background-color:var(--panel-2)}
+.ph-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(212,255,58,0.15)}
+.ph-select option{background:var(--bg-2);color:var(--ink);padding:8px;font-family:'Inter Tight',sans-serif}
+.ph-select.account-select{min-width:200px}
+.ph-count-badge{background:var(--accent);color:#000;padding:4px 10px;border-radius:10px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:0.05em;min-width:30px;text-align:center}
+
+/* Multi-select component */
+.multi-select-btn{display:inline-flex;align-items:center;gap:10px;background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink);padding:9px 14px;font-size:12px;letter-spacing:0.05em;font-weight:600;font-family:'Inter Tight',sans-serif;border-radius:5px;cursor:pointer;min-width:200px;transition:all 0.2s}
+.multi-select-btn:hover{border-color:var(--accent);background:var(--panel-2)}
+.multi-select-btn.has-selection{border-color:var(--accent);background:var(--panel-2)}
+.multi-select-btn .ms-label{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+.multi-select-btn .ms-count{background:var(--accent);color:#000;padding:2px 8px;border-radius:9px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;min-width:24px;text-align:center}
+.multi-select-btn .ms-chevron{color:var(--accent);font-size:10px;transition:transform 0.2s}
+.multi-select-btn.open .ms-chevron{transform:rotate(180deg)}
+.multi-select-panel{position:absolute;top:calc(100% + 6px);left:0;width:340px;max-width:90vw;background:var(--panel);border:1px solid var(--line-2);border-radius:6px;box-shadow:0 12px 32px rgba(0,0,0,0.5);z-index:9000;display:none;flex-direction:column;animation:fadeIn 0.15s ease}
+.multi-select-panel.open{display:flex}
+.ms-search-row{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line)}
+.ms-search{flex:1;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);padding:7px 10px;font-size:11px;font-family:'JetBrains Mono',monospace;border-radius:4px;outline:none}
+.ms-search:focus{border-color:var(--accent)}
+.ms-clear{background:transparent;border:1px solid var(--line-2);color:var(--ink-2);padding:6px 10px;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;cursor:pointer;border-radius:4px;font-family:inherit;transition:all 0.2s}
+.ms-clear:hover{color:var(--bad);border-color:var(--bad)}
+.ms-list{max-height:280px;overflow-y:auto;padding:6px 0}
+.ms-list::-webkit-scrollbar{width:6px}
+.ms-list::-webkit-scrollbar-track{background:var(--bg-2)}
+.ms-list::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+.ms-item{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;font-size:12px;color:var(--ink);font-family:'Inter Tight',sans-serif;transition:background 0.1s}
+.ms-item:hover{background:var(--bg-2)}
+.ms-item .ms-cb{width:14px;height:14px;border:1.5px solid var(--line-2);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.ms-item.checked .ms-cb{background:var(--accent);border-color:var(--accent)}
+.ms-item.checked .ms-cb::after{content:'';width:7px;height:4px;border-left:1.5px solid #000;border-bottom:1.5px solid #000;transform:rotate(-45deg);margin-top:-1px}
+.ms-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-item-region{font-size:9px;color:var(--ink-3);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;text-transform:uppercase}
+.ms-empty{padding:14px;text-align:center;color:var(--ink-3);font-size:11px;font-style:italic}
+.ms-footer{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--bg-2)}
+.ms-selected-info{font-size:10px;color:var(--ink-2);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+.ms-apply{background:var(--accent);color:#000;border:none;padding:7px 16px;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;cursor:pointer;border-radius:4px;font-family:inherit;transition:all 0.2s}
+.ms-apply:hover{background:#bfeb2a}
+
+/* Combined filter row */
+.region-switcher.filter-row{margin-bottom:32px;align-items:flex-end;gap:24px}
+.filter-group{display:flex;flex-direction:column;gap:6px}
+.filter-group .fg-label{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-3);font-weight:700;font-family:'Inter Tight',sans-serif}
+.filter-group.toggle-group{flex:1;min-width:0}
+.toggle-wrap{display:flex;gap:8px;flex-wrap:wrap}
+.flag-toggle{display:inline-flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);padding:8px 12px;font-size:11px;font-weight:600;letter-spacing:0.05em;font-family:'Inter Tight',sans-serif;border-radius:5px;cursor:pointer;transition:all 0.2s}
+.flag-toggle:hover{color:var(--ink);border-color:var(--ink-3)}
+.flag-toggle.active{background:var(--panel);border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent) inset}
+.flag-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.flag-dot.new{background:#3da8e0}
+.flag-dot.top10{background:var(--gold)}
+.flag-dot.red{background:var(--bad)}
+.flag-count{background:var(--line);color:var(--ink-3);padding:2px 7px;border-radius:9px;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:0.05em;min-width:22px;text-align:center}
+.flag-toggle.active .flag-count{background:var(--accent);color:#000}
+
+/* Flag popover */
+.flag-popover{position:absolute;z-index:9998;background:var(--panel);border:1px solid var(--line-2);border-radius:6px;padding:10px 0;min-width:220px;max-width:320px;max-height:340px;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,0.5);animation:fadeIn 0.15s ease}
+.flag-pop-header{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);font-weight:700;padding:0 14px 8px;border-bottom:1px solid var(--line);margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+.flag-pop-item{font-size:12px;color:var(--ink);font-family:'Inter Tight',sans-serif;padding:5px 14px;line-height:1.4}
+.flag-pop-item:hover{background:var(--bg-2)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.flag-popover::-webkit-scrollbar{width:6px}
+.flag-popover::-webkit-scrollbar-track{background:var(--bg-2)}
+.flag-popover::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
+
+@media (max-width:900px){
+  .region-switcher.filter-row{gap:14px}
+  .ph-select{min-width:160px}
+}
+.data-source .ds-label{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.data-source .ds-status{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-2);flex:1;min-width:200px}
+.data-source .ds-status strong{color:var(--accent);font-weight:600}
+.data-source .ds-status .file-name{color:var(--ink);font-weight:500}
+.data-source .ds-actions{display:flex;gap:8px}
+.data-source button{background:var(--accent);color:#000;border:none;padding:9px 16px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;cursor:pointer;border-radius:4px;font-family:inherit;transition:all 0.2s}
+.data-source button:hover{background:#bfeb2a;transform:translateY(-1px)}
+.data-source button.secondary{background:transparent;color:var(--ink-2);border:1px solid var(--line-2)}
+.data-source button.secondary:hover{color:var(--ink);border-color:var(--accent);background:transparent;transform:none}
+#fileInput{display:none}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--line-2);padding:14px 20px;font-size:12px;color:var(--ink);z-index:9999;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:slideUp 0.3s ease;font-family:'JetBrains Mono',monospace;max-width:380px}
+.toast.error{border-left:3px solid var(--bad)}
+.toast.success{border-left:3px solid var(--good)}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* GOVERNANCE SUMMARY */
+.gov-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:24px}
+.gov-card{background:var(--panel);padding:20px;position:relative}
+.gov-card .gov-label{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.gov-card .gov-icon{font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--accent);text-transform:none;letter-spacing:0}
+.gov-card .gov-headline{font-family:'Fraunces',serif;font-size:30px;font-weight:500;letter-spacing:-0.02em;margin-top:12px;line-height:1}
+.gov-card .gov-headline .unit{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-3);font-weight:400;margin-left:4px}
+.gov-card .gov-sub{font-size:11px;color:var(--ink-2);margin-top:10px;font-family:'JetBrains Mono',monospace}
+.gov-bars{display:flex;gap:3px;margin-top:14px;height:12px;border-radius:2px;overflow:hidden;background:var(--bg-2)}
+.gov-bars .seg{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7);font-family:'JetBrains Mono',monospace;min-width:18px;transition:all 0.3s}
+.gov-bars .seg.green{background:var(--good)}
+.gov-bars .seg.amber{background:var(--warn)}
+.gov-bars .seg.red{background:var(--bad)}
+.gov-bars .seg.grey{background:var(--line-2);color:var(--ink-2)}
+.gov-legend{display:flex;gap:10px;margin-top:8px;font-size:9px;color:var(--ink-3);font-family:'JetBrains Mono',monospace;flex-wrap:wrap}
+.gov-legend span{display:flex;align-items:center;gap:4px}
+.gov-legend .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+@media (max-width:1200px){
+  .gov-summary{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:640px){
+  .gov-summary{grid-template-columns:1fr}
+}
+
+#govTable thead th{cursor:default}
+#govTable td{font-size:12px;font-family:'JetBrains Mono',monospace}
+#govTable td:first-child{font-family:'Inter Tight',sans-serif;font-weight:500;color:var(--ink)}
+.gov-pill{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;letter-spacing:0.05em;font-weight:600;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.gov-pill.green{background:rgba(125,216,127,0.15);color:var(--good)}
+.gov-pill.amber{background:rgba(244,197,66,0.15);color:var(--warn)}
+.gov-pill.red{background:rgba(255,90,90,0.15);color:var(--bad)}
+.gov-pill.grey{background:rgba(184,179,168,0.1);color:var(--ink-3)}
+.gov-pill.yes{background:rgba(125,216,127,0.12);color:var(--good)}
+.gov-pill.no{background:rgba(184,179,168,0.1);color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-row">
+    <div>
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-text"><span id="brandRegionLabel">CEO Review</span> <strong>· Pan-India Analytics</strong></div>
+      </div>
+      <div class="title-block">
+        <h1>CEO Review · <em>Pan-India</em><br>FY 2026–27</h1>
+      </div>
+      <div class="title-meta">
+        <span>View<strong id="regionLabel">All Regions</strong></span>
+        <span>Accounts<strong id="meta-accounts">—</strong></span>
+        <span>Active<strong id="meta-active">—</strong></span>
+        <span>Currency<strong>₹ Lakhs</strong></span>
+      </div>
+    </div>
+    <div class="masthead-right">
+      <div class="updated-stamp" id="updatedStamp">
+        <span class="us-label">Last Updated</span>
+        <span class="us-value" id="updatedValue">—</span>
+      </div>
+      <div class="fy-stamp">
+        Fiscal Year<br>
+        <strong>FY27</strong>
+        <div class="fy-label">Q1 → Q4</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- DATA SOURCE PANEL -->
+  <div class="data-source">
+    <div class="data-source-meta">
+      <div class="ds-title" id="dsStatus">Loaded from <strong>CEO_Review.xlsx</strong> · <strong id="dsCount">—</strong> accounts</div>
+      <div class="ds-hint">To refresh with new data, click <strong>Load File</strong> below and pick an updated <strong>CEO_Review.xlsx</strong>. Same columns expected.</div>
+    </div>
+    <div class="ds-actions">
+      <button onclick="triggerFileLoad('CEO')">↑ Load File</button>
+      <button class="secondary" onclick="resetData()">Reset</button>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.xlsm" onchange="handleFileUpload(event)">
+    </div>
+  </div>
+
+  <!-- LEADER SWITCHER -->
+  <div class="region-switcher">
+    <span class="rs-label">Leader Wise</span>
+    <div class="rs-tabs" id="leaderTabs">
+      <!-- populated dynamically -->
+    </div>
+  </div>
+
+  <!-- REGION SWITCHER -->
+  <div class="region-switcher">
+    <span class="rs-label">View By</span>
+    <div class="rs-tabs" id="regionTabs">
+      <!-- populated dynamically -->
+    </div>
+  </div>
+
+  <!-- DROPDOWN + TOGGLE FILTER ROW -->
+  <div class="region-switcher filter-row">
+    <span class="rs-label">Filters</span>
+    
+    <div class="filter-group">
+      <label class="fg-label">PH Wise</label>
+      <div class="ph-dropdown-wrap">
+        <select id="phSelect" class="ph-select">
+          <!-- populated dynamically -->
+        </select>
+        <span class="ph-count-badge" id="phCountBadge">—</span>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label class="fg-label">Account Wise</label>
+      <div class="ph-dropdown-wrap">
+        <button class="multi-select-btn" id="accountSelectBtn" type="button">
+          <span class="ms-label" id="accountSelectLabel">All Accounts</span>
+          <span class="ms-count" id="accountSelectCount">57</span>
+          <span class="ms-chevron">▾</span>
+        </button>
+        <div class="multi-select-panel" id="accountSelectPanel">
+          <div class="ms-search-row">
+            <input type="text" class="ms-search" id="accountSelectSearch" placeholder="Search accounts…">
+            <button class="ms-clear" id="accountSelectClear" type="button">Clear All</button>
+          </div>
+          <div class="ms-list" id="accountSelectList"></div>
+          <div class="ms-footer">
+            <span class="ms-selected-info" id="accountSelectInfo">0 selected</span>
+            <button class="ms-apply" id="accountSelectApply" type="button">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label class="fg-label"><span class="flag-dot new" style="margin-right:6px;display:inline-block;width:7px;height:7px;border-radius:50%"></span>New Account</label>
+      <div class="ph-dropdown-wrap">
+        <button class="multi-select-btn flag-select-btn" id="newSelectBtn" type="button" data-flag="new">
+          <span class="ms-label" id="newSelectLabel">All New</span>
+          <span class="ms-count" id="newSelectCount">—</span>
+          <span class="ms-chevron">▾</span>
+        </button>
+        <div class="multi-select-panel" id="newSelectPanel">
+          <div class="ms-search-row">
+            <input type="text" class="ms-search" id="newSelectSearch" placeholder="Search New accounts…">
+            <button class="ms-clear" id="newSelectClear" type="button">Clear All</button>
+          </div>
+          <div class="ms-list" id="newSelectList"></div>
+          <div class="ms-footer">
+            <span class="ms-selected-info" id="newSelectInfo">0 selected</span>
+            <button class="ms-apply" id="newSelectApply" type="button">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label class="fg-label"><span class="flag-dot top10" style="margin-right:6px;display:inline-block;width:7px;height:7px;border-radius:50%"></span>Top 10</label>
+      <div class="ph-dropdown-wrap">
+        <button class="multi-select-btn flag-select-btn" id="top10SelectBtn" type="button" data-flag="top10">
+          <span class="ms-label" id="top10SelectLabel">All Top 10</span>
+          <span class="ms-count" id="top10SelectCount">—</span>
+          <span class="ms-chevron">▾</span>
+        </button>
+        <div class="multi-select-panel" id="top10SelectPanel">
+          <div class="ms-search-row">
+            <input type="text" class="ms-search" id="top10SelectSearch" placeholder="Search Top 10 accounts…">
+            <button class="ms-clear" id="top10SelectClear" type="button">Clear All</button>
+          </div>
+          <div class="ms-list" id="top10SelectList"></div>
+          <div class="ms-footer">
+            <span class="ms-selected-info" id="top10SelectInfo">0 selected</span>
+            <button class="ms-apply" id="top10SelectApply" type="button">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="filter-group">
+      <label class="fg-label"><span class="flag-dot red" style="margin-right:6px;display:inline-block;width:7px;height:7px;border-radius:50%"></span>Red Account</label>
+      <div class="ph-dropdown-wrap">
+        <button class="multi-select-btn flag-select-btn" id="redSelectBtn" type="button" data-flag="red">
+          <span class="ms-label" id="redSelectLabel">All Red</span>
+          <span class="ms-count" id="redSelectCount">—</span>
+          <span class="ms-chevron">▾</span>
+        </button>
+        <div class="multi-select-panel" id="redSelectPanel">
+          <div class="ms-search-row">
+            <input type="text" class="ms-search" id="redSelectSearch" placeholder="Search Red accounts…">
+            <button class="ms-clear" id="redSelectClear" type="button">Clear All</button>
+          </div>
+          <div class="ms-list" id="redSelectList"></div>
+          <div class="ms-footer">
+            <span class="ms-selected-info" id="redSelectInfo">0 selected</span>
+            <button class="ms-apply" id="redSelectApply" type="button">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI BAND -->
+  <div class="section-label">
+    <span class="num">i.</span>
+    <span class="lbl">Headline Metrics · Annual</span>
+    <span class="line"></span>
+  </div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- QUARTER ON QUARTER -->
+  <div class="section-label">
+    <span class="num">ii.</span>
+    <span class="lbl">Quarter on Quarter Snapshot</span>
+    <span class="line"></span>
+  </div>
+  <div class="quarter-strip" id="quarterStrip"></div>
+
+  <!-- CHARTS -->
+  <div class="chart-row">
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Trend <em>by Quarter</em></div>
+          <div class="panel-sub">Toggle metric to inspect QoQ movement across the portfolio</div>
+        </div>
+        <div class="metric-tabs" id="metricTabs">
+          <button class="tab active" data-metric="budRev">Budget Rev</button>
+          <button class="tab" data-metric="fcRev">Forecast Rev</button>
+          <button class="tab" data-metric="cm">CM%</button>
+          <button class="tab" data-metric="ppc">PPC</button>
+          <button class="tab" data-metric="hc">HC</button>
+          <button class="tab" data-metric="revPro">Rev Pro</button>
+          <button class="tab" data-metric="taggd">Taggd Pro</button>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Top Contributors</div>
+          <div class="panel-sub">Annual revenue, top 10 accounts</div>
+        </div>
+      </div>
+      <div class="bars" id="topBars"></div>
+    </div>
+  </div>
+
+  <!-- TAGGD PRO RANKING -->
+  <div class="section-label">
+    <span class="num">iii.</span>
+    <span class="lbl">Taggd Revenue Productivity · Quarter on Quarter</span>
+    <span class="line"></span>
+  </div>
+  <div class="taggd-row">
+    <div class="panel taggd-stats">
+      <div class="panel-header" style="border-bottom:none;padding-bottom:0;margin-bottom:14px">
+        <div>
+          <div class="panel-title"><em>Taggd Pro</em></div>
+          <div class="panel-sub">Productivity multiple — annual benchmark</div>
+        </div>
+      </div>
+      <div class="taggd-headline" id="taggdHeadline">—</div>
+      <div class="taggd-meta" id="taggdMeta"></div>
+      <div class="taggd-legend">
+        <div><span class="dot dot-good"></span>≥ 25% above portfolio avg</div>
+        <div><span class="dot dot-bad"></span>&lt; 25% below avg</div>
+        <div><span class="dot dot-mid"></span>Within band</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">QoQ <em>Average Trend</em></div>
+          <div class="panel-sub">Portfolio Taggd Pro by quarter — average across reporting accounts</div>
+        </div>
+      </div>
+      <div id="taggdQoQ" style="height:180px;position:relative"><canvas id="taggdQoQChart"></canvas></div>
+      <div class="panel-header" style="border-bottom:none;padding:18px 0 8px;margin:0">
+        <div>
+          <div class="panel-title" style="font-size:16px">Account Ranking <em>by Annual Taggd Pro</em></div>
+        </div>
+      </div>
+      <div class="taggd-bars" id="taggdBars"></div>
+    </div>
+  </div>
+
+  <!-- REV PRODUCTIVITY RANKING -->
+  <div class="section-label">
+    <span class="num">iv.</span>
+    <span class="lbl">Revenue Productivity · Quarter on Quarter</span>
+    <span class="line"></span>
+  </div>
+  <div class="taggd-row">
+    <div class="panel taggd-stats">
+      <div class="panel-header" style="border-bottom:none;padding-bottom:0;margin-bottom:14px">
+        <div>
+          <div class="panel-title"><em>Rev Pro</em></div>
+          <div class="panel-sub">Productivity score — annual average</div>
+        </div>
+      </div>
+      <div class="taggd-headline" id="revProHeadline">—</div>
+      <div class="taggd-meta" id="revProMeta"></div>
+      <div class="taggd-legend">
+        <div><span class="dot dot-good"></span>≥ 25% above portfolio avg</div>
+        <div><span class="dot dot-bad"></span>&lt; 25% below avg</div>
+        <div><span class="dot dot-mid"></span>Within band</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">QoQ <em>Average Trend</em></div>
+          <div class="panel-sub">Portfolio Rev Pro by quarter — average across reporting accounts</div>
+        </div>
+      </div>
+      <div id="revProQoQ" style="height:180px;position:relative"><canvas id="revProQoQChart"></canvas></div>
+      <div class="panel-header" style="border-bottom:none;padding:18px 0 8px;margin:0">
+        <div>
+          <div class="panel-title" style="font-size:16px">Account Ranking <em>by Annual Rev Pro</em></div>
+        </div>
+      </div>
+      <div class="taggd-bars" id="revProBars"></div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="section-label">
+    <span class="num">v.</span>
+    <span class="lbl">Editorial Notes · What's worth attention</span>
+    <span class="line"></span>
+  </div>
+  <div class="insights-grid" id="insightsGrid"></div>
+
+  <!-- GOVERNANCE SUMMARY -->
+  <div class="section-label">
+    <span class="num">vi.</span>
+    <span class="lbl">Governance · Billing · SLA · Risk</span>
+    <span class="line"></span>
+  </div>
+  <div class="gov-summary" id="govSummary"></div>
+
+  <!-- GOVERNANCE TABLE -->
+  <div class="panel" style="margin-bottom:48px">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Account-wise <em>Governance Ledger</em></div>
+        <div class="panel-sub">Internal governance flags, unbilled, collection overdue, status, SLA, Top 10</div>
+      </div>
+      <div class="search-bar">
+        <input type="text" class="search-input" id="govSearchInput" placeholder="Search account…">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="govTable">
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Region</th>
+            <th class="cell-num">LY Unbilled</th>
+            <th class="cell-num">CY Unbilled</th>
+            <th class="cell-num">Coll &gt;30d</th>
+            <th>Mgr</th>
+            <th>PH</th>
+            <th>FH</th>
+            <th>Issue</th>
+            <th>Red</th>
+            <th>SLA</th>
+            <th>Top 10</th>
+          </tr>
+        </thead>
+        <tbody id="govTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ACCOUNT TABLE -->
+  <div class="section-label">
+    <span class="num">vii.</span>
+    <span class="lbl">Account Ledger · Full Detail</span>
+    <span class="line"></span>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">All <em>Accounts</em></div>
+        <div class="panel-sub">Click any column to sort. Use search to filter by name.</div>
+      </div>
+      <div class="search-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="op">Operating</button>
+        <button class="filter-btn" data-filter="lead">Leadership</button>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search account…">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="accountTable">
+        <thead>
+          <tr>
+            <th data-sort="name">Account</th>
+            <th data-sort="region" class="cell-num">Region</th>
+            <th data-sort="budRev" class="cell-num">Budget Rev</th>
+            <th data-sort="rev" class="cell-num">Forecast Rev</th>
+            <th data-sort="achievement" class="cell-num">Ach %</th>
+            <th data-sort="cm" class="cell-num">CM%</th>
+            <th data-sort="ppc" class="cell-num">PPC</th>
+            <th data-sort="hc" class="cell-num">HC</th>
+            <th data-sort="revPro" class="cell-num">Rev Pro</th>
+            <th data-sort="taggd" class="cell-num">Taggd Pro</th>
+            <th data-sort="q1" class="cell-num">Q1 Rev</th>
+            <th data-sort="q2" class="cell-num">Q2 Rev</th>
+            <th data-sort="q3" class="cell-num">Q3 Rev</th>
+            <th data-sort="q4" class="cell-num">Q4 Rev</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Compiled <em>from CEO_Review.xlsx</em> · 58 accounts · FY 2026–27 · Pan-India
+</footer>
+
+<script>
+const RAW = [{"name":"Honeywell","leader":"Bapi","ph":"Bapi","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":475.0,"fcRev":475.0,"cost":289.89,"cm":0.6103,"ppc":107620.38,"hc":172.0,"rph":0,"taggd":0,"revPro":4.35},"Q2":{"budRev":440.0,"fcRev":440.0,"cost":236.38,"cm":0.5372,"ppc":118382.42,"hc":172.0,"rph":0,"taggd":0,"revPro":4.03},"Q3":{"budRev":330.0,"fcRev":330.0,"cost":126.38,"cm":0.383,"ppc":118382.42,"hc":172.0,"rph":0,"taggd":0,"revPro":3.02},"Q4":{"budRev":480.0,"fcRev":480.0,"cost":276.38,"cm":0.5758,"ppc":118382.42,"hc":172.0,"rph":0,"taggd":0,"revPro":4.4},"Total":{"budRev":1725.0,"fcRev":1725.0,"cost":929.04,"cm":0.5386,"ppc":115691.91,"hc":172.0,"rph":0,"revPro":0,"taggd":3.95},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":120.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"Yes"}},{"name":"Honeywell Leadership","leader":"Bapi","ph":"Parul Jain","accountStatus":"Old Account","region":"Bapi","isLeadership":true,"Q1":{"budRev":5.0,"fcRev":9.88,"cost":-0.53,"cm":-0.0535,"ppc":173405.52,"hc":6.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":5.0,"fcRev":5.0,"cost":-6.44,"cm":-1.289,"ppc":190746.08,"hc":6.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":5.0,"fcRev":5.0,"cost":-6.44,"cm":-1.289,"ppc":190746.08,"hc":6.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":5.0,"fcRev":5.0,"cost":-6.44,"cm":-1.289,"ppc":190746.08,"hc":6.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":20.0,"fcRev":24.88,"cost":-19.86,"cm":-0.7985,"ppc":186410.94,"hc":6.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":2.26,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"No"}},{"name":"Pfizer","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":24.0,"fcRev":22.8,"cost":10.68,"cm":0.4686,"ppc":100967.53,"hc":12.0,"rph":0,"taggd":0,"revPro":2.53},"Q2":{"budRev":24.0,"fcRev":24.0,"cost":10.67,"cm":0.4447,"ppc":111064.28,"hc":12.0,"rph":0,"taggd":0,"revPro":2.67},"Q3":{"budRev":15.0,"fcRev":15.0,"cost":1.67,"cm":0.1115,"ppc":111064.28,"hc":12.0,"rph":0,"taggd":0,"revPro":1.67},"Q4":{"budRev":17.0,"fcRev":17.0,"cost":3.67,"cm":0.216,"ppc":111064.28,"hc":12.0,"rph":0,"taggd":0,"revPro":1.89},"Total":{"budRev":80.0,"fcRev":78.8,"cost":26.7,"cm":0.3388,"ppc":108540.09,"hc":12.0,"rph":0,"revPro":0,"taggd":2.19},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":5.31,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"No"}},{"name":"SKF India","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":56.0,"fcRev":41.46,"cost":-10.51,"cm":-0.2536,"ppc":110580.55,"hc":47.0,"rph":0,"taggd":0,"revPro":1.34},"Q2":{"budRev":63.0,"fcRev":63.0,"cost":5.83,"cm":0.0925,"ppc":121638.6,"hc":47.0,"rph":0,"taggd":0,"revPro":2.04},"Q3":{"budRev":57.0,"fcRev":57.0,"cost":-0.17,"cm":-0.003,"ppc":121638.6,"hc":47.0,"rph":0,"taggd":0,"revPro":1.84},"Q4":{"budRev":46.0,"fcRev":46.0,"cost":-11.17,"cm":-0.2428,"ppc":121638.6,"hc":47.0,"rph":0,"taggd":0,"revPro":1.49},"Total":{"budRev":222.0,"fcRev":207.46,"cost":-16.02,"cm":-0.0772,"ppc":118874.09,"hc":47.0,"rph":0,"revPro":0,"taggd":1.68},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":50.67,"cyUnbilled":26.5,"collOverdue":6.9,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"No"}},{"name":"Siemens (Advatnta & GBS)","leader":"Manish","ph":"Kunal","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":28.5,"fcRev":19.12,"cost":0.88,"cm":0.0462,"ppc":101311.4,"hc":18.0,"rph":0,"taggd":0,"revPro":1.27},"Q2":{"budRev":27.4,"fcRev":27.4,"cost":7.34,"cm":0.2679,"ppc":111442.54,"hc":18.0,"rph":0,"taggd":0,"revPro":1.83},"Q3":{"budRev":31.5,"fcRev":31.5,"cost":11.44,"cm":0.3632,"ppc":111442.54,"hc":18.0,"rph":0,"taggd":0,"revPro":2.1},"Q4":{"budRev":35.7,"fcRev":35.7,"cost":15.64,"cm":0.4381,"ppc":111442.54,"hc":18.0,"rph":0,"taggd":0,"revPro":2.38},"Total":{"budRev":123.1,"fcRev":113.72,"cost":35.3,"cm":0.3104,"ppc":108909.76,"hc":18.0,"rph":0,"revPro":0,"taggd":1.9},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":53.1,"cyUnbilled":6.12,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"No"}},{"name":"Siemens Energy","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":33.0,"fcRev":29.15,"cost":4.41,"cm":0.1512,"ppc":101000.0,"hc":24.5,"rph":0,"taggd":0,"revPro":1.21},"Q2":{"budRev":34.5,"fcRev":34.5,"cost":7.28,"cm":0.211,"ppc":111100.0,"hc":24.5,"rph":0,"taggd":0,"revPro":1.44},"Q3":{"budRev":30.6,"fcRev":30.6,"cost":3.38,"cm":0.1105,"ppc":111100.0,"hc":24.5,"rph":0,"taggd":0,"revPro":1.28},"Q4":{"budRev":36.6,"fcRev":36.6,"cost":9.38,"cm":0.2563,"ppc":111100.0,"hc":24.5,"rph":0,"taggd":0,"revPro":1.53},"Total":{"budRev":134.7,"fcRev":130.85,"cost":24.45,"cm":0.1868,"ppc":108575.0,"hc":24.5,"rph":0,"revPro":0,"taggd":1.36},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":13.05,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"No"}},{"name":"Pidilite","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":51.75,"fcRev":25.08,"cost":-0.58,"cm":-0.023,"ppc":80180.64,"hc":32.0,"rph":0,"taggd":0,"revPro":0.84},"Q2":{"budRev":45.5,"fcRev":45.5,"cost":17.28,"cm":0.3797,"ppc":88198.71,"hc":32.0,"rph":0,"taggd":0,"revPro":1.52},"Q3":{"budRev":48.0,"fcRev":48.0,"cost":19.78,"cm":0.412,"ppc":88198.71,"hc":32.0,"rph":0,"taggd":0,"revPro":1.6},"Q4":{"budRev":50.5,"fcRev":50.5,"cost":22.28,"cm":0.4411,"ppc":88198.71,"hc":32.0,"rph":0,"taggd":0,"revPro":1.68},"Total":{"budRev":195.75,"fcRev":169.08,"cost":58.75,"cm":0.3475,"ppc":86194.19,"hc":32.0,"rph":0,"revPro":0,"taggd":1.41},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":4.58,"collOverdue":25.54,"issueStatus":"No","redAccount":"No","slaStatus":"Not Reported","top10":"No"}},{"name":"Vertiv","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":10.0,"fcRev":9.77,"cost":3.45,"cm":0.3527,"ppc":105409.99,"hc":6.0,"rph":0,"taggd":0,"revPro":1.63},"Q2":{"budRev":12.0,"fcRev":12.0,"cost":5.04,"cm":0.4202,"ppc":115950.99,"hc":6.0,"rph":0,"taggd":0,"revPro":2.0},"Q3":{"budRev":13.0,"fcRev":13.0,"cost":6.04,"cm":0.4648,"ppc":115950.99,"hc":6.0,"rph":0,"taggd":0,"revPro":2.17},"Q4":{"budRev":13.0,"fcRev":13.0,"cost":6.04,"cm":0.4648,"ppc":115950.99,"hc":6.0,"rph":0,"taggd":0,"revPro":2.17},"Total":{"budRev":48.0,"fcRev":47.77,"cost":20.57,"cm":0.4307,"ppc":113315.74,"hc":6.0,"rph":0,"revPro":0,"taggd":1.99},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0.31,"issueStatus":"No","redAccount":"No","slaStatus":"Not Reported","top10":"No"}},{"name":"Birla Paints","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":51.5,"fcRev":40.74,"cost":16.68,"cm":0.4095,"ppc":92529.71,"hc":26.0,"rph":0,"taggd":0,"revPro":1.81},"Q2":{"budRev":47.2,"fcRev":47.2,"cost":20.74,"cm":0.4393,"ppc":101782.68,"hc":26.0,"rph":0,"taggd":0,"revPro":2.1},"Q3":{"budRev":49.8,"fcRev":49.8,"cost":23.34,"cm":0.4686,"ppc":101782.68,"hc":26.0,"rph":0,"taggd":0,"revPro":2.21},"Q4":{"budRev":46.6,"fcRev":46.6,"cost":20.14,"cm":0.4321,"ppc":101782.68,"hc":26.0,"rph":0,"taggd":0,"revPro":2.07},"Total":{"budRev":195.1,"fcRev":184.34,"cost":80.89,"cm":0.4388,"ppc":99469.44,"hc":26.0,"rph":0,"revPro":0,"taggd":2.05},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":13.71,"cyUnbilled":12.79,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"Amber","top10":"No"}},{"name":"HPE","leader":"Mahak","ph":"Mahak","accountStatus":"Old Account","region":"Mahak","isLeadership":false,"Q1":{"budRev":329.3,"fcRev":417.0,"cost":181.46,"cm":0.4351,"ppc":139210.96,"hc":169.2,"rph":0,"taggd":0,"revPro":3.82},"Q2":{"budRev":392.27,"fcRev":392.27,"cost":133.17,"cm":0.3395,"ppc":153132.05,"hc":169.2,"rph":0,"taggd":0,"revPro":3.59},"Q3":{"budRev":329.57,"fcRev":329.57,"cost":70.47,"cm":0.2138,"ppc":153132.05,"hc":169.2,"rph":0,"taggd":0,"revPro":3.02},"Q4":{"budRev":392.0,"fcRev":392.0,"cost":132.91,"cm":0.339,"ppc":153132.05,"hc":169.2,"rph":0,"taggd":0,"revPro":3.59},"Total":{"budRev":1443.15,"fcRev":1530.85,"cost":518.0,"cm":0.3384,"ppc":149651.78,"hc":169.2,"rph":0,"revPro":0,"taggd":3.5},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"Yes"}},{"name":"Isuzu","leader":"Manish","ph":"Satya","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":27.0,"fcRev":14.79,"cost":5.58,"cm":0.3773,"ppc":127874.85,"hc":7.2,"rph":0,"taggd":0,"revPro":4.93},"Q2":{"budRev":27.0,"fcRev":27.0,"cost":16.87,"cm":0.6249,"ppc":140662.33,"hc":7.2,"rph":0,"taggd":0,"revPro":9.0},"Q3":{"budRev":20.0,"fcRev":20.0,"cost":9.87,"cm":0.4936,"ppc":140662.33,"hc":7.2,"rph":0,"taggd":0,"revPro":6.67},"Q4":{"budRev":23.0,"fcRev":23.0,"cost":12.87,"cm":0.5597,"ppc":140662.33,"hc":7.2,"rph":0,"taggd":0,"revPro":7.67},"Total":{"budRev":97.0,"fcRev":84.78,"cost":45.19,"cm":0.5331,"ppc":137465.46,"hc":7.2,"rph":0,"revPro":0,"taggd":7.07},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":3.79,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"No"}},{"name":"Mahindra Holidays","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":0.0,"fcRev":0.9,"cost":-2.75,"cm":-3.05,"ppc":90000.0,"hc":4.05,"rph":0,"taggd":0,"revPro":0.1},"Q2":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":0.9,"cost":-2.75,"cm":-3.05,"ppc":22500.0,"hc":1.01,"rph":0,"revPro":0,"taggd":0.03},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":8.1,"cyUnbilled":0.9,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"Not Reported","top10":"No"}},{"name":"Mahindra Holidays Leadership","leader":"Anjli","ph":"Parul Jain","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"BITS","leader":"Manish","ph":"Krishna","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":12.0,"fcRev":13.59,"cost":4.3,"cm":0.3162,"ppc":84493.66,"hc":11.0,"rph":0,"taggd":0,"revPro":2.27},"Q2":{"budRev":13.0,"fcRev":13.0,"cost":2.78,"cm":0.2136,"ppc":92943.02,"hc":11.0,"rph":0,"taggd":0,"revPro":2.17},"Q3":{"budRev":11.0,"fcRev":11.0,"cost":0.78,"cm":0.0706,"ppc":92943.02,"hc":11.0,"rph":0,"taggd":0,"revPro":1.83},"Q4":{"budRev":12.0,"fcRev":12.0,"cost":1.78,"cm":0.148,"ppc":92943.02,"hc":11.0,"rph":0,"taggd":0,"revPro":2.0},"Total":{"budRev":48.0,"fcRev":49.59,"cost":9.63,"cm":0.1941,"ppc":90830.68,"hc":11.0,"rph":0,"revPro":0,"taggd":2.07},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0.13,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"No"}},{"name":"M&M","leader":"Anjli","ph":"Saurabh","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":305.0,"fcRev":364.61,"cost":137.39,"cm":0.3768,"ppc":93889.94,"hc":242.0,"rph":0,"taggd":0,"revPro":1.84},"Q2":{"budRev":330.0,"fcRev":330.0,"cost":80.06,"cm":0.2426,"ppc":103278.93,"hc":242.0,"rph":0,"taggd":0,"revPro":1.67},"Q3":{"budRev":360.0,"fcRev":360.0,"cost":110.06,"cm":0.3057,"ppc":103278.93,"hc":242.0,"rph":0,"taggd":0,"revPro":1.82},"Q4":{"budRev":390.0,"fcRev":390.0,"cost":140.06,"cm":0.3591,"ppc":103278.93,"hc":242.0,"rph":0,"taggd":0,"revPro":1.97},"Total":{"budRev":1385.0,"fcRev":1444.61,"cost":467.59,"cm":0.3237,"ppc":100931.68,"hc":242.0,"rph":0,"revPro":0,"taggd":1.82},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":171.1,"issueStatus":"No","redAccount":"No","slaStatus":"Red","top10":"Yes"}},{"name":"M&M Leadership","leader":"Anjli","ph":"Parul Jain","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":70.0,"fcRev":76.19,"cost":37.0,"cm":0.4856,"ppc":130642.86,"hc":30.0,"rph":0,"taggd":0,"revPro":8.47},"Q2":{"budRev":70.0,"fcRev":70.0,"cost":26.89,"cm":0.3841,"ppc":143707.15,"hc":30.0,"rph":0,"taggd":0,"revPro":7.78},"Q3":{"budRev":40.0,"fcRev":40.0,"cost":-3.11,"cm":-0.0778,"ppc":143707.15,"hc":30.0,"rph":0,"taggd":0,"revPro":4.44},"Q4":{"budRev":70.0,"fcRev":70.0,"cost":26.89,"cm":0.3841,"ppc":143707.15,"hc":30.0,"rph":0,"taggd":0,"revPro":7.78},"Total":{"budRev":250.0,"fcRev":256.19,"cost":87.66,"cm":0.3422,"ppc":140441.08,"hc":30.0,"rph":0,"revPro":0,"taggd":7.12},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Wipro","leader":"Subu","ph":"Subu","accountStatus":"Old Account","region":"Subu","isLeadership":false,"Q1":{"budRev":150.0,"fcRev":85.99,"cost":49.82,"cm":0.5794,"ppc":98824.57,"hc":36.6,"rph":0,"taggd":0,"revPro":2.87},"Q2":{"budRev":150.0,"fcRev":150.0,"cost":110.21,"cm":0.7348,"ppc":108707.03,"hc":36.6,"rph":0,"taggd":0,"revPro":5.0},"Q3":{"budRev":100.0,"fcRev":100.0,"cost":60.21,"cm":0.6021,"ppc":108707.03,"hc":36.6,"rph":0,"taggd":0,"revPro":3.33},"Q4":{"budRev":150.0,"fcRev":150.0,"cost":110.21,"cm":0.7348,"ppc":108707.03,"hc":36.6,"rph":0,"taggd":0,"revPro":5.0},"Total":{"budRev":550.0,"fcRev":485.99,"cost":330.46,"cm":0.68,"ppc":106236.41,"hc":36.6,"rph":0,"revPro":0,"taggd":4.05},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":39.99,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"Yes"}},{"name":"DP World","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":20.11,"fcRev":26.27,"cost":14.88,"cm":0.5663,"ppc":87648.63,"hc":13.0,"rph":0,"taggd":0,"revPro":2.5},"Q2":{"budRev":24.87,"fcRev":24.87,"cost":12.33,"cm":0.4959,"ppc":96413.49,"hc":13.0,"rph":0,"taggd":0,"revPro":2.37},"Q3":{"budRev":25.63,"fcRev":25.63,"cost":13.1,"cm":0.5111,"ppc":96413.49,"hc":13.0,"rph":0,"taggd":0,"revPro":2.44},"Q4":{"budRev":23.71,"fcRev":23.71,"cost":11.18,"cm":0.4714,"ppc":96413.49,"hc":13.0,"rph":0,"taggd":0,"revPro":2.26},"Total":{"budRev":94.32,"fcRev":100.48,"cost":51.49,"cm":0.5124,"ppc":94222.28,"hc":13.0,"rph":0,"revPro":0,"taggd":2.39},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":6.99,"collOverdue":33.0,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"No"}},{"name":"AMNS","leader":"Anjli","ph":"Alifia","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":90.0,"fcRev":109.24,"cost":10.61,"cm":0.0972,"ppc":92605.58,"hc":106.5,"rph":0,"taggd":0,"revPro":1.06},"Q2":{"budRev":90.0,"fcRev":90.0,"cost":-18.49,"cm":-0.2054,"ppc":101866.14,"hc":106.5,"rph":0,"taggd":0,"revPro":0.87},"Q3":{"budRev":90.0,"fcRev":90.0,"cost":-18.49,"cm":-0.2054,"ppc":101866.14,"hc":106.5,"rph":0,"taggd":0,"revPro":0.87},"Q4":{"budRev":90.0,"fcRev":90.0,"cost":-18.49,"cm":-0.2054,"ppc":101866.14,"hc":106.5,"rph":0,"taggd":0,"revPro":0.87},"Total":{"budRev":360.0,"fcRev":379.24,"cost":-44.85,"cm":-0.1183,"ppc":99551.0,"hc":106.5,"rph":0,"revPro":0,"taggd":0.92},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":69.17,"cyUnbilled":26.28,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"Red","top10":"Yes"}},{"name":"AMNS Leadership","leader":"Anjli","ph":"Alifia","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":15.0,"fcRev":4.75,"cost":2.68,"cm":0.5655,"ppc":103085.48,"hc":2.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":23.0,"fcRev":23.0,"cost":20.73,"cm":0.9014,"ppc":113394.03,"hc":2.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":26.0,"fcRev":26.0,"cost":23.73,"cm":0.9128,"ppc":113394.03,"hc":2.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":26.0,"fcRev":26.0,"cost":23.73,"cm":0.9128,"ppc":113394.03,"hc":2.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":90.0,"fcRev":79.75,"cost":70.88,"cm":0.8888,"ppc":110816.9,"hc":2.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Red","top10":"No"}},{"name":"Tata Electronics","leader":"Manish","ph":"Satya","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":4.0,"fcRev":2.68,"cost":-0.62,"cm":-0.2309,"ppc":110145.72,"hc":3.0,"rph":0,"taggd":0,"revPro":0.89},"Q2":{"budRev":4.0,"fcRev":4.0,"cost":0.37,"cm":0.0913,"ppc":121160.29,"hc":3.0,"rph":0,"taggd":0,"revPro":1.33},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":-3.63,"cm":0.0,"ppc":121160.29,"hc":3.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":-3.63,"cm":0.0,"ppc":121160.29,"hc":3.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":8.0,"fcRev":6.68,"cost":-7.52,"cm":-1.1256,"ppc":118406.65,"hc":3.0,"rph":0,"revPro":0,"taggd":0.56},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":6.23,"cyUnbilled":0.68,"collOverdue":16.93,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Jindal Stainless","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":32.0,"fcRev":12.71,"cost":-2.42,"cm":-0.19,"ppc":100838.36,"hc":15.0,"rph":0,"taggd":0,"revPro":1.37},"Q2":{"budRev":29.0,"fcRev":29.0,"cost":12.36,"cm":0.4263,"ppc":110922.19,"hc":15.0,"rph":0,"taggd":0,"revPro":3.12},"Q3":{"budRev":29.0,"fcRev":29.0,"cost":12.36,"cm":0.4263,"ppc":110922.19,"hc":15.0,"rph":0,"taggd":0,"revPro":3.12},"Q4":{"budRev":30.0,"fcRev":30.0,"cost":13.36,"cm":0.4454,"ppc":110922.19,"hc":15.0,"rph":0,"taggd":0,"revPro":3.23},"Total":{"budRev":120.0,"fcRev":100.71,"cost":35.67,"cm":0.3542,"ppc":108401.23,"hc":15.0,"rph":0,"revPro":0,"taggd":2.71},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":106.43,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"No"}},{"name":"Schaeffler","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":21.0,"fcRev":29.52,"cost":14.53,"cm":0.4924,"ppc":99879.71,"hc":15.0,"rph":0,"taggd":0,"revPro":2.46},"Q2":{"budRev":22.0,"fcRev":22.0,"cost":5.52,"cm":0.2509,"ppc":109867.69,"hc":15.0,"rph":0,"taggd":0,"revPro":1.83},"Q3":{"budRev":22.0,"fcRev":22.0,"cost":5.52,"cm":0.2509,"ppc":109867.69,"hc":15.0,"rph":0,"taggd":0,"revPro":1.83},"Q4":{"budRev":21.5,"fcRev":21.5,"cost":5.02,"cm":0.2335,"ppc":109867.69,"hc":15.0,"rph":0,"taggd":0,"revPro":1.79},"Total":{"budRev":86.5,"fcRev":95.02,"cost":30.59,"cm":0.322,"ppc":107370.69,"hc":15.0,"rph":0,"revPro":0,"taggd":1.98},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":19.53,"issueStatus":"No","redAccount":"Yes","slaStatus":"Not Reported","top10":"No"}},{"name":"Royal Enfield","leader":"Manish","ph":"Manish","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":48.0,"fcRev":48.22,"cost":-17.37,"cm":-0.3603,"ppc":117138.77,"hc":56.0,"rph":0,"taggd":0,"revPro":0.95},"Q2":{"budRev":48.0,"fcRev":48.0,"cost":-24.16,"cm":-0.5033,"ppc":128852.65,"hc":56.0,"rph":0,"taggd":0,"revPro":0.94},"Q3":{"budRev":48.0,"fcRev":48.0,"cost":-24.16,"cm":-0.5033,"ppc":128852.65,"hc":56.0,"rph":0,"taggd":0,"revPro":0.94},"Q4":{"budRev":48.0,"fcRev":48.0,"cost":-24.16,"cm":-0.5033,"ppc":128852.65,"hc":56.0,"rph":0,"taggd":0,"revPro":0.94},"Total":{"budRev":192.0,"fcRev":192.22,"cost":-89.85,"cm":-0.4674,"ppc":125924.18,"hc":56.0,"rph":0,"revPro":0,"taggd":0.94},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":24.22,"collOverdue":59.54,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Royal Enfield Leadership","leader":"Manish","ph":"Parul Jain","accountStatus":"Old Account","region":"South","isLeadership":true,"Q1":{"budRev":18.0,"fcRev":0.0,"cost":-1.3,"cm":0.0,"ppc":130317.52,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":4.0,"fcRev":4.0,"cost":2.57,"cm":0.6416,"ppc":143349.28,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":2.0,"fcRev":2.0,"cost":0.57,"cm":0.2833,"ppc":143349.28,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":1.0,"fcRev":1.0,"cost":-0.43,"cm":-0.4335,"ppc":143349.28,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":25.0,"fcRev":7.0,"cost":1.4,"cm":0.1995,"ppc":140091.34,"hc":1.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"SBI Card","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":33.0,"fcRev":33.29,"cost":-0.02,"cm":-0.0007,"ppc":83282.01,"hc":40.0,"rph":0,"taggd":0,"revPro":0.98},"Q2":{"budRev":50.0,"fcRev":50.0,"cost":13.36,"cm":0.2671,"ppc":91610.21,"hc":40.0,"rph":0,"taggd":0,"revPro":1.47},"Q3":{"budRev":58.0,"fcRev":58.0,"cost":21.36,"cm":0.3682,"ppc":91610.21,"hc":40.0,"rph":0,"taggd":0,"revPro":1.71},"Q4":{"budRev":38.0,"fcRev":38.0,"cost":1.36,"cm":0.0357,"ppc":91610.21,"hc":40.0,"rph":0,"taggd":0,"revPro":1.12},"Total":{"budRev":179.0,"fcRev":179.29,"cost":36.04,"cm":0.201,"ppc":89528.16,"hc":40.0,"rph":0,"revPro":0,"taggd":1.32},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"Green","top10":"No"}},{"name":"Hyundai Motor","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":12.0,"fcRev":18.85,"cost":-0.42,"cm":-0.0222,"ppc":91755.34,"hc":21.0,"rph":0,"taggd":0,"revPro":1.05},"Q2":{"budRev":16.0,"fcRev":16.0,"cost":-5.2,"cm":-0.3247,"ppc":100930.87,"hc":21.0,"rph":0,"taggd":0,"revPro":0.89},"Q3":{"budRev":16.0,"fcRev":16.0,"cost":-5.2,"cm":-0.3247,"ppc":100930.87,"hc":21.0,"rph":0,"taggd":0,"revPro":0.89},"Q4":{"budRev":16.0,"fcRev":16.0,"cost":-5.2,"cm":-0.3247,"ppc":100930.87,"hc":21.0,"rph":0,"taggd":0,"revPro":0.89},"Total":{"budRev":60.0,"fcRev":66.85,"cost":-16.0,"cm":-0.2394,"ppc":98636.99,"hc":21.0,"rph":0,"revPro":0,"taggd":0.93},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":5.49,"collOverdue":19.92,"issueStatus":"No","redAccount":"No","slaStatus":"Not Reported","top10":"No"}},{"name":"Hyundai Motor Leadership","leader":"Anjli","ph":"Parul Jain","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":3.0,"fcRev":1.8,"cost":1.8,"cm":1.0,"ppc":110000.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":3.0,"fcRev":3.0,"cost":3.0,"cm":1.0,"ppc":121000.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":2.0,"fcRev":2.0,"cost":2.0,"cm":1.0,"ppc":133100.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":2.0,"fcRev":2.0,"cost":2.0,"cm":1.0,"ppc":146410.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":10.0,"fcRev":8.8,"cost":8.8,"cm":1.0,"ppc":127627.5,"hc":0.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Maruti Suzuki(MSIL)","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":100.0,"fcRev":69.0,"cost":-7.81,"cm":-0.1132,"ppc":92547.06,"hc":83.0,"rph":0,"taggd":0,"revPro":0.97},"Q2":{"budRev":127.0,"fcRev":127.0,"cost":42.5,"cm":0.3347,"ppc":101801.77,"hc":83.0,"rph":0,"taggd":0,"revPro":1.79},"Q3":{"budRev":133.0,"fcRev":133.0,"cost":48.5,"cm":0.3647,"ppc":101801.77,"hc":83.0,"rph":0,"taggd":0,"revPro":1.87},"Q4":{"budRev":120.0,"fcRev":120.0,"cost":35.5,"cm":0.2959,"ppc":101801.77,"hc":83.0,"rph":0,"taggd":0,"revPro":1.69},"Total":{"budRev":480.0,"fcRev":449.0,"cost":118.7,"cm":0.2644,"ppc":99488.09,"hc":83.0,"rph":0,"revPro":0,"taggd":1.58},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":26.5,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"Red","top10":"Yes"}},{"name":"Tata Consumer","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":62.73,"fcRev":82.3,"cost":44.48,"cm":0.5405,"ppc":87949.12,"hc":43.0,"rph":0,"taggd":0,"revPro":2.11},"Q2":{"budRev":63.39,"fcRev":63.39,"cost":21.79,"cm":0.3437,"ppc":96744.03,"hc":43.0,"rph":0,"taggd":0,"revPro":1.63},"Q3":{"budRev":59.1,"fcRev":59.1,"cost":17.5,"cm":0.2961,"ppc":96744.03,"hc":43.0,"rph":0,"taggd":0,"revPro":1.52},"Q4":{"budRev":60.75,"fcRev":60.75,"cost":19.15,"cm":0.3152,"ppc":96744.03,"hc":43.0,"rph":0,"taggd":0,"revPro":1.56},"Total":{"budRev":245.97,"fcRev":265.54,"cost":102.92,"cm":0.3876,"ppc":94545.3,"hc":43.0,"rph":0,"revPro":0,"taggd":1.7},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":16.75,"cyUnbilled":30.8,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"No"}},{"name":"Tata Play","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":3.5,"fcRev":0.0,"cost":-3.67,"cm":0.0,"ppc":122240.75,"hc":3.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":3.5,"fcRev":3.5,"cost":-0.53,"cm":-0.1526,"ppc":134464.83,"hc":3.0,"rph":0,"taggd":0,"revPro":1.17},"Q3":{"budRev":3.5,"fcRev":3.5,"cost":-0.53,"cm":-0.1526,"ppc":134464.83,"hc":3.0,"rph":0,"taggd":0,"revPro":1.17},"Q4":{"budRev":3.0,"fcRev":3.0,"cost":-1.03,"cm":-0.3446,"ppc":134464.83,"hc":3.0,"rph":0,"taggd":0,"revPro":1.0},"Total":{"budRev":13.5,"fcRev":10.0,"cost":-5.77,"cm":-0.5769,"ppc":131408.81,"hc":3.0,"rph":0,"revPro":0,"taggd":0.83},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":4.17,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Mahindra Finance","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Subros Ltd","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":8.6,"fcRev":7.67,"cost":1.01,"cm":0.1311,"ppc":95201.33,"hc":7.0,"rph":0,"taggd":0,"revPro":1.22},"Q2":{"budRev":9.1,"fcRev":9.1,"cost":1.77,"cm":0.1945,"ppc":104721.46,"hc":7.0,"rph":0,"taggd":0,"revPro":1.44},"Q3":{"budRev":11.0,"fcRev":11.0,"cost":3.67,"cm":0.3336,"ppc":104721.46,"hc":7.0,"rph":0,"taggd":0,"revPro":1.75},"Q4":{"budRev":12.4,"fcRev":12.4,"cost":5.07,"cm":0.4088,"ppc":104721.46,"hc":7.0,"rph":0,"taggd":0,"revPro":1.97},"Total":{"budRev":41.1,"fcRev":40.17,"cost":11.51,"cm":0.2866,"ppc":102341.42,"hc":7.0,"rph":0,"revPro":0,"taggd":1.59},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"Red","top10":"No"}},{"name":"Atomberg Technologies","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":23.61,"fcRev":19.67,"cost":6.49,"cm":0.33,"ppc":82348.64,"hc":16.0,"rph":0,"taggd":0,"revPro":1.64},"Q2":{"budRev":24.71,"fcRev":24.71,"cost":10.22,"cm":0.4136,"ppc":90583.51,"hc":16.0,"rph":0,"taggd":0,"revPro":2.06},"Q3":{"budRev":25.78,"fcRev":25.78,"cost":11.29,"cm":0.4378,"ppc":90583.51,"hc":16.0,"rph":0,"taggd":0,"revPro":2.15},"Q4":{"budRev":26.21,"fcRev":26.21,"cost":11.72,"cm":0.4471,"ppc":90583.51,"hc":16.0,"rph":0,"taggd":0,"revPro":2.18},"Total":{"budRev":100.32,"fcRev":96.38,"cost":39.72,"cm":0.4121,"ppc":88524.79,"hc":16.0,"rph":0,"revPro":0,"taggd":2.01},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":3.13,"cyUnbilled":3.61,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Red","top10":"No"}},{"name":"Ambuja Cement","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":112.0,"fcRev":83.29,"cost":-31.86,"cm":-0.3826,"ppc":94388.83,"hc":122.0,"rph":0,"taggd":0,"revPro":1.63},"Q2":{"budRev":99.0,"fcRev":99.0,"cost":-27.67,"cm":-0.2795,"ppc":103827.71,"hc":122.0,"rph":0,"taggd":0,"revPro":1.94},"Q3":{"budRev":104.0,"fcRev":104.0,"cost":-22.67,"cm":-0.218,"ppc":103827.71,"hc":122.0,"rph":0,"taggd":0,"revPro":2.04},"Q4":{"budRev":111.0,"fcRev":111.0,"cost":-15.67,"cm":-0.1412,"ppc":103827.71,"hc":122.0,"rph":0,"taggd":0,"revPro":2.18},"Total":{"budRev":426.0,"fcRev":397.29,"cost":-97.87,"cm":-0.2464,"ppc":101467.99,"hc":122.0,"rph":0,"revPro":0,"taggd":1.95},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":37.19,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Amber","top10":"Yes"}},{"name":"Ashok Leyland","leader":"Manish","ph":"Krishna","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":46.0,"fcRev":46.0,"cost":10.78,"cm":0.2344,"ppc":100619.43,"hc":35.0,"rph":0,"taggd":0,"revPro":2.19},"Q2":{"budRev":64.0,"fcRev":64.0,"cost":25.26,"cm":0.3947,"ppc":110681.38,"hc":35.0,"rph":0,"taggd":0,"revPro":3.05},"Q3":{"budRev":60.0,"fcRev":60.0,"cost":21.26,"cm":0.3544,"ppc":110681.38,"hc":35.0,"rph":0,"taggd":0,"revPro":2.86},"Q4":{"budRev":62.0,"fcRev":62.0,"cost":23.26,"cm":0.3752,"ppc":110681.38,"hc":35.0,"rph":0,"taggd":0,"revPro":2.95},"Total":{"budRev":232.0,"fcRev":232.0,"cost":80.57,"cm":0.3473,"ppc":108165.89,"hc":35.0,"rph":0,"revPro":0,"taggd":2.76},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Not Reported","top10":"No"}},{"name":"Bridgestone","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":15.5,"fcRev":15.62,"cost":7.2,"cm":0.4613,"ppc":93473.03,"hc":9.0,"rph":0,"taggd":0,"revPro":2.6},"Q2":{"budRev":18.0,"fcRev":18.0,"cost":8.75,"cm":0.4859,"ppc":102820.34,"hc":9.0,"rph":0,"taggd":0,"revPro":3.0},"Q3":{"budRev":17.0,"fcRev":17.0,"cost":7.75,"cm":0.4557,"ppc":102820.34,"hc":9.0,"rph":0,"taggd":0,"revPro":2.83},"Q4":{"budRev":15.0,"fcRev":15.0,"cost":5.75,"cm":0.3831,"ppc":102820.34,"hc":9.0,"rph":0,"taggd":0,"revPro":2.5},"Total":{"budRev":65.5,"fcRev":65.62,"cost":29.44,"cm":0.4487,"ppc":100483.51,"hc":9.0,"rph":0,"revPro":0,"taggd":2.73},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Not Reported","top10":"No"}},{"name":"Sterling Tools","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":12.0,"fcRev":21.46,"cost":9.11,"cm":0.4247,"ppc":102889.4,"hc":12.0,"rph":0,"taggd":0,"revPro":2.31},"Q2":{"budRev":16.0,"fcRev":16.0,"cost":2.42,"cm":0.1512,"ppc":113178.34,"hc":12.0,"rph":0,"taggd":0,"revPro":1.72},"Q3":{"budRev":15.0,"fcRev":15.0,"cost":1.42,"cm":0.0946,"ppc":113178.34,"hc":12.0,"rph":0,"taggd":0,"revPro":1.61},"Q4":{"budRev":15.0,"fcRev":15.0,"cost":1.42,"cm":0.0946,"ppc":113178.34,"hc":12.0,"rph":0,"taggd":0,"revPro":1.61},"Total":{"budRev":58.0,"fcRev":67.46,"cost":14.37,"cm":0.213,"ppc":110606.11,"hc":12.0,"rph":0,"revPro":0,"taggd":1.81},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":16.78,"issueStatus":"No","redAccount":"Yes","slaStatus":"Greed","top10":"No"}},{"name":"Sterling Tools Leadership","leader":"Anjli","ph":"Parul Jain","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Pernod Ricard","leader":"Anjli","ph":"Archana Tarika","accountStatus":"Old Account","region":"North","isLeadership":false,"Q1":{"budRev":28.5,"fcRev":28.33,"cost":11.95,"cm":0.4219,"ppc":109174.83,"hc":15.0,"rph":0,"taggd":0,"revPro":2.95},"Q2":{"budRev":28.5,"fcRev":28.5,"cost":10.49,"cm":0.3679,"ppc":120092.31,"hc":15.0,"rph":0,"taggd":0,"revPro":2.97},"Q3":{"budRev":33.0,"fcRev":33.0,"cost":14.99,"cm":0.4541,"ppc":120092.31,"hc":15.0,"rph":0,"taggd":0,"revPro":3.44},"Q4":{"budRev":15.0,"fcRev":15.0,"cost":-3.01,"cm":-0.2009,"ppc":120092.31,"hc":15.0,"rph":0,"taggd":0,"revPro":1.56},"Total":{"budRev":105.0,"fcRev":104.83,"cost":34.41,"cm":0.3283,"ppc":117362.94,"hc":15.0,"rph":0,"revPro":0,"taggd":2.73},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":4.22,"cyUnbilled":10.17,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Green","top10":"No"}},{"name":"Nagarjuna Leadership","leader":"Manish","ph":"Parul Jain","accountStatus":"Old Account","region":"South","isLeadership":true,"Q1":{"budRev":0.0,"fcRev":1.0,"cost":0.1,"cm":0.1,"ppc":90000.0,"hc":1.0,"rph":0,"taggd":0,"revPro":0.33},"Q2":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":1.0,"cost":0.1,"cm":0.1,"ppc":22500.0,"hc":0.25,"rph":0,"revPro":0,"taggd":0.08},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"ABB","leader":"Manish","ph":"Satya","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":20.0,"fcRev":19.86,"cost":4.3,"cm":0.2166,"ppc":112725.33,"hc":13.8,"rph":0,"taggd":0,"revPro":2.21},"Q2":{"budRev":20.0,"fcRev":20.0,"cost":2.89,"cm":0.1444,"ppc":123997.86,"hc":13.8,"rph":0,"taggd":0,"revPro":2.22},"Q3":{"budRev":12.0,"fcRev":12.0,"cost":-5.11,"cm":-0.426,"ppc":123997.86,"hc":13.8,"rph":0,"taggd":0,"revPro":1.33},"Q4":{"budRev":15.0,"fcRev":15.0,"cost":-2.11,"cm":-0.1408,"ppc":123997.86,"hc":13.8,"rph":0,"taggd":0,"revPro":1.67},"Total":{"budRev":67.0,"fcRev":66.86,"cost":-0.03,"cm":-0.0005,"ppc":121179.73,"hc":13.8,"rph":0,"revPro":0,"taggd":1.86},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":13.08,"cyUnbilled":2.9,"collOverdue":8.53,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Siemens Healthnier","leader":"Manish","ph":"Lekhana","accountStatus":"Old Account","region":"South","isLeadership":false,"Q1":{"budRev":33.58,"fcRev":26.14,"cost":12.26,"cm":0.4691,"ppc":115651.33,"hc":12.0,"rph":0,"taggd":0,"revPro":2.9},"Q2":{"budRev":43.3,"fcRev":43.3,"cost":28.03,"cm":0.6474,"ppc":127216.46,"hc":12.0,"rph":0,"taggd":0,"revPro":4.81},"Q3":{"budRev":43.3,"fcRev":43.3,"cost":28.03,"cm":0.6474,"ppc":127216.46,"hc":12.0,"rph":0,"taggd":0,"revPro":4.81},"Q4":{"budRev":43.3,"fcRev":43.3,"cost":28.03,"cm":0.6474,"ppc":127216.46,"hc":12.0,"rph":0,"taggd":0,"revPro":4.81},"Total":{"budRev":163.47,"fcRev":156.03,"cost":96.35,"cm":0.6175,"ppc":124325.18,"hc":12.0,"rph":0,"revPro":0,"taggd":4.33},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":19.7,"cyUnbilled":7.97,"collOverdue":0,"issueStatus":"No","redAccount":"Yes","slaStatus":"","top10":"No"}},{"name":"LEAP India","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":19.1,"fcRev":25.45,"cost":11.21,"cm":0.4404,"ppc":74953.15,"hc":19.0,"rph":0,"taggd":0,"revPro":1.7},"Q2":{"budRev":20.4,"fcRev":20.4,"cost":4.73,"cm":0.2321,"ppc":82448.46,"hc":19.0,"rph":0,"taggd":0,"revPro":1.36},"Q3":{"budRev":21.65,"fcRev":21.65,"cost":5.98,"cm":0.2764,"ppc":82448.46,"hc":19.0,"rph":0,"taggd":0,"revPro":1.44},"Q4":{"budRev":20.1,"fcRev":20.1,"cost":4.43,"cm":0.2206,"ppc":82448.46,"hc":19.0,"rph":0,"taggd":0,"revPro":1.34},"Total":{"budRev":81.25,"fcRev":87.6,"cost":26.36,"cm":0.301,"ppc":80574.63,"hc":19.0,"rph":0,"revPro":0,"taggd":1.46},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":10.65,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"Not Reported","top10":"No"}},{"name":"UniCharm","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"Old Account","region":"West","isLeadership":false,"Q1":{"budRev":12.0,"fcRev":10.28,"cost":2.67,"cm":0.2596,"ppc":108677.96,"hc":7.0,"rph":0,"taggd":0,"revPro":1.71},"Q2":{"budRev":12.0,"fcRev":12.0,"cost":3.63,"cm":0.3026,"ppc":119545.75,"hc":7.0,"rph":0,"taggd":0,"revPro":2.0},"Q3":{"budRev":12.0,"fcRev":12.0,"cost":3.63,"cm":0.3026,"ppc":119545.75,"hc":7.0,"rph":0,"taggd":0,"revPro":2.0},"Q4":{"budRev":12.0,"fcRev":12.0,"cost":3.63,"cm":0.3026,"ppc":119545.75,"hc":7.0,"rph":0,"taggd":0,"revPro":2.0},"Total":{"budRev":48.0,"fcRev":46.28,"cost":13.56,"cm":0.2931,"ppc":116828.81,"hc":7.0,"rph":0,"revPro":0,"taggd":1.93},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Optum","leader":"Ashish","ph":"Ashish","accountStatus":"Old Account","region":"Ashish","isLeadership":false,"Q1":{"budRev":137.5,"fcRev":157.0,"cost":79.42,"cm":0.5058,"ppc":104841.14,"hc":74.0,"rph":0,"taggd":0,"revPro":2.75},"Q2":{"budRev":137.5,"fcRev":137.5,"cost":52.16,"cm":0.3793,"ppc":115325.26,"hc":74.0,"rph":0,"taggd":0,"revPro":2.41},"Q3":{"budRev":137.5,"fcRev":137.5,"cost":52.16,"cm":0.3793,"ppc":115325.26,"hc":74.0,"rph":0,"taggd":0,"revPro":2.41},"Q4":{"budRev":137.5,"fcRev":137.5,"cost":52.16,"cm":0.3793,"ppc":115325.26,"hc":74.0,"rph":0,"taggd":0,"revPro":2.41},"Total":{"budRev":550.0,"fcRev":569.5,"cost":235.9,"cm":0.4142,"ppc":112704.23,"hc":74.0,"rph":0,"revPro":0,"taggd":2.5},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":4.22,"cyUnbilled":50.0,"collOverdue":12.18,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"Yes"}},{"name":"Saint Gobain","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"New Account","region":"West","isLeadership":false,"Q1":{"budRev":81.63,"fcRev":72.0,"cost":14.43,"cm":0.2004,"ppc":101000.0,"hc":57.0,"rph":0,"taggd":0,"revPro":1.5},"Q2":{"budRev":115.69,"fcRev":115.69,"cost":52.36,"cm":0.4526,"ppc":111100.0,"hc":57.0,"rph":0,"taggd":0,"revPro":2.41},"Q3":{"budRev":122.79,"fcRev":122.79,"cost":59.46,"cm":0.4843,"ppc":111100.0,"hc":57.0,"rph":0,"taggd":0,"revPro":2.56},"Q4":{"budRev":122.79,"fcRev":122.79,"cost":59.46,"cm":0.4843,"ppc":111100.0,"hc":57.0,"rph":0,"taggd":0,"revPro":2.56},"Total":{"budRev":442.9,"fcRev":433.27,"cost":185.72,"cm":0.4286,"ppc":108575.0,"hc":57.0,"rph":0,"revPro":0,"taggd":2.26},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":17.0,"collOverdue":2.65,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"Yes"}},{"name":"Metglass","leader":"Anjli","ph":"Archana Tarika","accountStatus":"New Account","region":"North","isLeadership":false,"Q1":{"budRev":21.75,"fcRev":21.6,"cost":17.56,"cm":0.813,"ppc":101000.0,"hc":4.0,"rph":0,"taggd":0,"revPro":7.2},"Q2":{"budRev":24.9,"fcRev":24.9,"cost":20.46,"cm":0.8215,"ppc":111100.0,"hc":4.0,"rph":0,"taggd":0,"revPro":8.3},"Q3":{"budRev":23.7,"fcRev":23.7,"cost":19.26,"cm":0.8125,"ppc":111100.0,"hc":4.0,"rph":0,"taggd":0,"revPro":7.9},"Q4":{"budRev":21.75,"fcRev":21.75,"cost":17.31,"cm":0.7957,"ppc":111100.0,"hc":4.0,"rph":0,"taggd":0,"revPro":7.25},"Total":{"budRev":92.1,"fcRev":91.95,"cost":74.58,"cm":0.8111,"ppc":108575.0,"hc":4.0,"rph":0,"revPro":0,"taggd":7.66},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"NeoSoft","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"New Account","region":"West","isLeadership":false,"Q1":{"budRev":57.0,"fcRev":0.0,"cost":-19.04,"cm":0.0,"ppc":105755.21,"hc":18.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":109.5,"fcRev":109.5,"cost":88.56,"cm":0.8088,"ppc":116330.73,"hc":18.0,"rph":0,"taggd":0,"revPro":9.12},"Q3":{"budRev":139.5,"fcRev":139.5,"cost":118.56,"cm":0.8499,"ppc":116330.73,"hc":18.0,"rph":0,"taggd":0,"revPro":11.62},"Q4":{"budRev":139.5,"fcRev":139.5,"cost":118.56,"cm":0.8499,"ppc":116330.73,"hc":18.0,"rph":0,"taggd":0,"revPro":11.62},"Total":{"budRev":445.5,"fcRev":388.5,"cost":306.65,"cm":0.7893,"ppc":113686.85,"hc":18.0,"rph":0,"revPro":0,"taggd":8.09},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"Yes"}},{"name":"Vertiv Leadership","leader":"Anjli","ph":"Parul Jain","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":8.0,"fcRev":6.0,"cost":-2.36,"cm":-0.3941,"ppc":139414.16,"hc":6.0,"rph":0,"taggd":0,"revPro":2.0},"Q2":{"budRev":6.0,"fcRev":6.0,"cost":-3.2,"cm":-0.5336,"ppc":153355.58,"hc":6.0,"rph":0,"taggd":0,"revPro":2.0},"Q3":{"budRev":9.0,"fcRev":9.0,"cost":-0.2,"cm":-0.0224,"ppc":153355.58,"hc":6.0,"rph":0,"taggd":0,"revPro":3.0},"Q4":{"budRev":7.0,"fcRev":7.0,"cost":-2.2,"cm":-0.3145,"ppc":153355.58,"hc":6.0,"rph":0,"taggd":0,"revPro":2.33},"Total":{"budRev":30.0,"fcRev":28.0,"cost":-7.97,"cm":-0.2846,"ppc":149870.22,"hc":6.0,"rph":0,"revPro":0,"taggd":2.33},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Subros Leadership","leader":"Anjli","ph":"Parul Jain","accountStatus":"Old Account","region":"West","isLeadership":true,"Q1":{"budRev":1.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":121584.75,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":1.0,"fcRev":1.0,"cost":1.0,"cm":1.0,"ppc":133743.23,"hc":0.0,"rph":0,"taggd":0,"revPro":0.16},"Q3":{"budRev":1.0,"fcRev":1.0,"cost":1.0,"cm":1.0,"ppc":133743.23,"hc":0.0,"rph":0,"taggd":0,"revPro":0.16},"Q4":{"budRev":2.0,"fcRev":2.0,"cost":2.0,"cm":1.0,"ppc":133743.23,"hc":0.0,"rph":0,"taggd":0,"revPro":0.32},"Total":{"budRev":5.0,"fcRev":4.0,"cost":4.0,"cm":1.0,"ppc":130703.61,"hc":0.0,"rph":0,"revPro":0,"taggd":0.16},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Siemens Leadership","leader":"Manish","ph":"Parul Jain","accountStatus":"Old Account","region":"South","isLeadership":true,"Q1":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"CG Power","leader":"Anjli","ph":"Archana Tarika","accountStatus":"New Account","region":"North","isLeadership":false,"Q1":{"budRev":60.51,"fcRev":12.75,"cost":-19.73,"cm":-1.5472,"ppc":50745.72,"hc":64.0,"rph":0,"taggd":0,"revPro":0.21},"Q2":{"budRev":130.62,"fcRev":130.62,"cost":94.9,"cm":0.7265,"ppc":55820.3,"hc":64.0,"rph":0,"taggd":0,"revPro":2.16},"Q3":{"budRev":149.52,"fcRev":149.52,"cost":113.79,"cm":0.7611,"ppc":55820.3,"hc":64.0,"rph":0,"taggd":0,"revPro":2.47},"Q4":{"budRev":193.61,"fcRev":193.61,"cost":157.88,"cm":0.8155,"ppc":55820.3,"hc":64.0,"rph":0,"taggd":0,"revPro":3.19},"Total":{"budRev":534.26,"fcRev":486.5,"cost":346.84,"cm":0.7129,"ppc":54551.65,"hc":64.0,"rph":0,"revPro":0,"taggd":2.01},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"Yes"}},{"name":"Exclusive","leader":"Exclusive","ph":"Exclusive","accountStatus":"Old Account","region":"Exclusive","isLeadership":false,"Q1":{"budRev":36.66,"fcRev":3.77,"cost":1.35,"cm":0.3572,"ppc":101000.0,"hc":2.4,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":24.0,"fcRev":24.0,"cost":21.33,"cm":0.8889,"ppc":111100.0,"hc":2.4,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":40.0,"fcRev":40.0,"cost":37.33,"cm":0.9333,"ppc":111100.0,"hc":2.4,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":50.0,"fcRev":50.0,"cost":47.33,"cm":0.9467,"ppc":111100.0,"hc":2.4,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":150.66,"fcRev":117.77,"cost":107.35,"cm":0.9115,"ppc":108575.0,"hc":2.4,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":1.75,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Middle East","leader":"Middle East","ph":"Middle East","accountStatus":"Old Account","region":"Middle East","isLeadership":false,"Q1":{"budRev":17.41,"fcRev":0.0,"cost":-4.48,"cm":0.0,"ppc":448176.66,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Q2":{"budRev":64.0,"fcRev":64.0,"cost":59.07,"cm":0.923,"ppc":492994.33,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":118.0,"fcRev":118.0,"cost":113.07,"cm":0.9582,"ppc":492994.33,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":150.0,"fcRev":150.0,"cost":145.07,"cm":0.9671,"ppc":492994.33,"hc":1.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":349.41,"fcRev":332.0,"cost":312.73,"cm":0.942,"ppc":481789.91,"hc":1.0,"rph":0,"revPro":0,"taggd":0.0},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Reliance","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"New Account","region":"West","isLeadership":false,"Q1":{"budRev":0.0,"fcRev":4.0,"cost":0.85,"cm":0.2125,"ppc":90000.0,"hc":3.5,"rph":0,"taggd":0,"revPro":0.38},"Q2":{"budRev":0,"fcRev":0,"cost":0,"cm":0.0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0,"fcRev":0,"cost":0,"cm":0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0,"fcRev":0,"cost":0.0,"cm":0.0,"ppc":99000.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":4.0,"cost":0.85,"cm":0.2125,"ppc":94500.0,"hc":1.75,"rph":0,"revPro":0,"taggd":0.1},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":0.0,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"Tata Power","leader":"Anjli","ph":"Sudha Pandey","accountStatus":"New Account","region":"West","isLeadership":false,"Q1":{"budRev":0.0,"fcRev":5.25,"cost":3.72,"cm":0.7086,"ppc":90000.0,"hc":1.7,"rph":0,"taggd":0,"revPro":1.25},"Q2":{"budRev":0,"fcRev":0,"cost":0,"cm":0.0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0.0},"Q3":{"budRev":0,"fcRev":0,"cost":0,"cm":0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0.0},"Q4":{"budRev":0,"fcRev":0,"cost":0.0,"cm":0.0,"ppc":99000.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0.0},"Total":{"budRev":0.0,"fcRev":5.25,"cost":3.72,"cm":0.7086,"ppc":94500.0,"hc":0.85,"rph":0,"revPro":0,"taggd":0.31},"gov":{"mgr":"Yes","phGov":"Yes","fnHead":"Yes","lyUnbilled":0,"cyUnbilled":1.75,"collOverdue":0,"issueStatus":"No","redAccount":"No","slaStatus":"","top10":"No"}},{"name":"New Sales","leader":"Nizar","ph":"Nizar","accountStatus":"New Account","region":"Nizar","isLeadership":false,"Q1":{"budRev":217.0,"fcRev":0.0,"cost":0.0,"cm":0.0,"ppc":0.0,"hc":0.0,"rph":0,"taggd":0,"revPro":0},"Q2":{"budRev":575.6,"fcRev":0,"cost":0,"cm":0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0},"Q3":{"budRev":742.65,"fcRev":0,"cost":0,"cm":0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0},"Q4":{"budRev":995.75,"fcRev":0,"cost":0,"cm":0,"ppc":0,"hc":0,"rph":0,"taggd":0,"revPro":0},"Total":{"budRev":2531.0,"fcRev":0.0,"cost":0,"cm":0,"ppc":0,"hc":0,"rph":0,"revPro":0,"taggd":0},"gov":{"mgr":"","phGov":"","fnHead":"","lyUnbilled":0,"cyUnbilled":0,"collOverdue":0,"issueStatus":"","redAccount":"","slaStatus":"","top10":""}}];
+
+// CEO Review data: each quarter has budRev (Budget) and fcRev (Forecast/Actual).
+// Alias .rev to .fcRev so existing chart/table logic works, and recompute CM% as Cost/Forecast Rev.
+// Also backfill Total.revPro from quarter average (source has it empty in Total column).
+RAW.forEach(c => {
+  ['Q1','Q2','Q3','Q4','Total'].forEach(q => {
+    if(!c[q]) return;
+    c[q].rev = c[q].fcRev || 0;  // alias
+    c[q].cm = c[q].rev ? c[q].cost / c[q].rev : 0;
+  });
+  // Compute Total.revPro = simple 4-quarter average (including zeros) — matches source convention
+  const qRP = ['Q1','Q2','Q3','Q4'].map(q => c[q]?.revPro || 0);
+  c.Total.revPro = qRP.reduce((s,v)=>s+v,0) / 4;
+  // Derive isNew flag from the source 'Account Status' column (preferred), 
+  // falling back to heuristic (Q1=0 but later quarters >0) if column is empty.
+  if(c.accountStatus){
+    c.isNew = c.accountStatus.toLowerCase().includes('new');
+  } else {
+    c.isNew = (c.Q1.fcRev === 0) && ((c.Q2.fcRev > 0) || (c.Q3.fcRev > 0) || (c.Q4.fcRev > 0));
+  }
+});
+
+
+// ============ Helpers ============
+const fmt = {
+  inr: n => {
+    if(!isFinite(n)) return '—';
+    const a = Math.abs(n);
+    if(a>=1e7) return (n/1e7).toFixed(2)+' Cr';
+    if(a>=1e5) return (n/1e5).toFixed(2)+' L';
+    if(a>=1e3) return (n/1e3).toFixed(1)+'K';
+    return n.toFixed(0);
+  },
+  // Values already in lakhs - convert to Cr if needed
+  inrLakh: n => {
+    if(!isFinite(n)) return '—';
+    const a = Math.abs(n);
+    if(a>=100) return (n/100).toFixed(2)+' Cr';
+    if(a>=1) return n.toFixed(1)+' L';
+    return (n*100).toFixed(0)+'K';
+  },
+  pct: n => isFinite(n) ? (n*100).toFixed(1)+'%' : '—',
+  num: n => isFinite(n) ? n.toLocaleString('en-IN',{maximumFractionDigits:0}) : '—',
+};
+
+// ============ Aggregates ============
+const QUARTERS = ['Q1','Q2','Q3','Q4'];
+const totals = {};
+QUARTERS.concat(['Total']).forEach(q=>{
+  let budRev=0,fcRev=0,cost=0,hc=0,ppcSum=0,ppcN=0,rpSum=0,rpN=0,tgSum=0,tgN=0,rphSum=0,rphN=0;
+  RAW.forEach(c=>{
+    if(!c[q]) return;
+    budRev += c[q].budRev || 0;
+    fcRev += c[q].fcRev || 0;
+    cost += c[q].cost || 0;
+    hc += c[q].hc || 0;
+    if(c[q].ppc>0){ppcSum+=c[q].ppc;ppcN++}
+    if(c[q].revPro>0){rpSum+=c[q].revPro;rpN++}
+    if(c[q].taggd>0){tgSum+=c[q].taggd;tgN++}
+    if(c[q].rph>0){rphSum+=c[q].rph;rphN++}
+  });
+  totals[q] = {
+    budRev, fcRev, cost, hc,
+    // For chart compatibility, "rev" alias points to Forecast/Actual revenue (what was achieved)
+    rev: fcRev,
+    cm: fcRev ? cost/fcRev : 0,
+    ppc: ppcN ? ppcSum/ppcN : 0,
+    revPro: rpN ? rpSum/rpN : 0,
+    rph: rphN ? rphSum/rphN : 0,
+    taggd: tgN ? tgSum/tgN : 0,
+    taggdAccounts: tgN,
+    achievement: budRev ? fcRev/budRev : 0,  // Forecast vs Budget
+  };
+});
+
+const activeAccounts = RAW.filter(c=>c.Total.fcRev > 0).length;
+document.getElementById('meta-accounts').textContent = RAW.length;
+document.getElementById('meta-active').textContent = activeAccounts;
+
+// ============ KPI Cards ============
+function buildKPIs(){
+  const q4 = totals.Q4, q3 = totals.Q3;
+  const budDelta = q3.budRev ? (q4.budRev - q3.budRev)/q3.budRev : 0;
+  const fcDelta = q3.fcRev ? (q4.fcRev - q3.fcRev)/q3.fcRev : 0;
+  const cmDelta = (q4.cm - q3.cm) * 100;
+  const ppcDelta = q3.ppc ? (q4.ppc - q3.ppc)/q3.ppc : 0;
+  const hcDelta = q3.hc ? (q4.hc - q3.hc)/q3.hc : 0;
+  const rpDelta = q3.revPro ? (q4.revPro - q3.revPro)/q3.revPro : 0;
+  
+  const cards = [
+    {label:'Budget Revenue', icon:'a', value: '₹'+fmt.inrLakh(totals.Total.budRev), sub:'Annual plan', delta: budDelta, deltaLabel:'vs Q3', metric:'budRev'},
+    {label:'Forecast Revenue', icon:'b', value: '₹'+fmt.inrLakh(totals.Total.fcRev), sub: 'Achievement '+fmt.pct(totals.Total.achievement), delta: fcDelta, deltaLabel:'vs Q3', metric:'fcRev'},
+    {label:'CM% (Cost / Rev)', icon:'c', value: fmt.pct(totals.Total.cm), sub:'Lower is better', delta: cmDelta/100, deltaLabel:'pp vs Q3', isPP:true, metric:'cm', invert:true},
+    {label:'PPC', icon:'d', value: '₹'+fmt.inr(totals.Total.ppc), sub:'Per-person cost', delta: ppcDelta, deltaLabel:'vs Q3', metric:'ppc', invert:true},
+    {label:'Head Count', icon:'e', value: Math.round(totals.Total.hc).toLocaleString('en-IN'), sub:'Sum across accounts', delta: hcDelta, deltaLabel:'vs Q3', metric:'hc'},
+    {label:'Rev Productivity', icon:'f', value: totals.Total.revPro.toFixed(2), sub:'Annual avg multiple', delta: rpDelta, deltaLabel:'vs Q3', metric:'revPro'},
+  ];
+  
+  const container = document.getElementById('kpiGrid');
+  container.innerHTML = cards.map(c=>{
+    // Compute delta direction for sparkline color only (no visible pill anymore)
+    let deltaClass = 'flat';
+    if(c.delta > 0.001){ deltaClass = c.invert ? 'dn' : 'up'; }
+    else if(c.delta < -0.001){ deltaClass = c.invert ? 'up' : 'dn'; }
+    
+    let sparkPath = '';
+    if(!c.noDelta){
+      const vals = QUARTERS.map(q => totals[q][c.metric] || 0);
+      const min = Math.min(...vals), max = Math.max(...vals);
+      const range = max-min || 1;
+      const pts = vals.map((v,i)=>`${(i*60)/3},${24-((v-min)/range)*22}`).join(' ');
+      sparkPath = `<svg class="kpi-spark" viewBox="0 0 60 24" preserveAspectRatio="none" width="100%"><polyline points="${pts}" fill="none" stroke="${deltaClass==='up'?'var(--good)':deltaClass==='dn'?'var(--bad)':'var(--ink-2)'}" stroke-width="1.2"/><circle cx="60" cy="${24-((vals[3]-min)/range)*22}" r="2" fill="var(--accent)"/></svg>`;
+    } else if(c.metric === 'taggd'){
+      const tgVals = RAW.filter(x=>x.Total.taggd>0).map(x=>x.Total.taggd).sort((a,b)=>a-b);
+      if(tgVals.length){
+        const max = Math.max(...tgVals);
+        const bars = tgVals.map((v,i)=>`<rect x="${(i*60)/tgVals.length}" y="${24-(v/max)*22}" width="${Math.max(1.5,(60/tgVals.length)-0.8)}" height="${(v/max)*22}" fill="var(--accent)" opacity="0.7"/>`).join('');
+        sparkPath = `<svg class="kpi-spark" viewBox="0 0 60 24" preserveAspectRatio="none" width="100%">${bars}</svg>`;
+      }
+    }
+    
+    return `<div class="kpi">
+      <div class="kpi-label"><span class="kpi-name">${c.label}</span><span class="kpi-icon">${c.icon}</span></div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-sub"><span>${c.sub}</span></div>
+      ${sparkPath}
+    </div>`;
+  }).join('');
+}
+
+// ============ Quarter Strip ============
+function buildQuarters(){
+  const revs = QUARTERS.map(q=>totals[q].fcRev);
+  const peakIdx = revs.indexOf(Math.max(...revs));
+  const lowIdx = revs.indexOf(Math.min(...revs));
+  
+  document.getElementById('quarterStrip').innerHTML = QUARTERS.map((q,i)=>{
+    const t = totals[q];
+    const tag = i===peakIdx ? '<span class="q-stat peak">Peak</span>' : i===lowIdx ? '<span class="q-stat low">Low</span>' : '';
+    const achPct = t.budRev ? (t.fcRev/t.budRev*100) : 0;
+    // Variance = Forecast - Budget (positive = beat plan, negative = shortfall)
+    const variance = t.fcRev - t.budRev;
+    const varPct = t.budRev ? (variance / t.budRev * 100) : 0;
+    let varCls = 'flat';
+    if(variance > 0.01) varCls = 'pos';
+    else if(variance < -0.01) varCls = 'neg';
+    const varSign = variance >= 0 ? '+' : '';
+    return `<div class="q-card">
+      <div class="q-tag"><span class="q-name">${q}</span>${tag}</div>
+      <div class="q-rev">₹${fmt.inrLakh(t.fcRev)}<span class="unit">fc</span></div>
+      <div class="q-variance ${varCls}">
+        <span class="var-label">vs Budget</span>
+        <span class="var-amount">${varSign}₹${fmt.inrLakh(Math.abs(variance))}</span>
+        <span class="var-pct">${varSign}${varPct.toFixed(1)}%</span>
+      </div>
+      <div class="q-meta">
+        <div class="q-meta-item"><div class="lbl">Budget</div><div class="val">₹${fmt.inrLakh(t.budRev)}</div></div>
+        <div class="q-meta-item"><div class="lbl">Achieved</div><div class="val">${achPct.toFixed(0)}%</div></div>
+        <div class="q-meta-item"><div class="lbl">CM%</div><div class="val">${fmt.pct(t.cm)}</div></div>
+        <div class="q-meta-item"><div class="lbl">PPC</div><div class="val">₹${fmt.inr(t.ppc)}</div></div>
+        <div class="q-meta-item"><div class="lbl">HC</div><div class="val">${Math.round(t.hc)}</div></div>
+        <div class="q-meta-item"><div class="lbl">Rev Pro</div><div class="val">${t.revPro.toFixed(2)}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ Trend Chart ============
+let trendChart = null;
+function buildTrendChart(metric){
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const labels = QUARTERS;
+  
+  const isPct = metric==='cm';
+  const isTaggd = metric==='taggd';
+  const isLakh = metric==='budRev' || metric==='fcRev';
+  const isCount = metric==='hc';
+  const isRevPro = metric==='revPro';
+  const labelMap = {budRev:'Budget Revenue', fcRev:'Forecast Revenue', cm:'CM% (Cost / Rev)', revPro:'Rev Productivity', ppc:'PPC', hc:'Head Count', taggd:'Taggd Rev Productivity'};
+  
+  // Value formatter
+  const fmtVal = v => {
+    if(!isFinite(v)) return '—';
+    if(isPct) return (v*100).toFixed(1)+'%';
+    if(isTaggd) return v.toFixed(2)+'x';
+    if(isLakh) return '₹'+fmt.inrLakh(v);
+    if(isCount) return Math.round(v).toLocaleString('en-IN');
+    if(isRevPro) return v.toFixed(2);
+    return '₹'+fmt.inr(v);
+  };
+  
+  // Pull quarterly values for the selected metric
+  const vals = labels.map(q => totals[q][metric] || 0);
+  
+  // Annual average reference (only for Taggd — shows benchmark line)
+  const annualAvg = isTaggd ? totals.Total.taggd : null;
+  
+  if(trendChart) trendChart.destroy();
+  
+  // gradient
+  const grad = ctx.createLinearGradient(0,0,0,360);
+  grad.addColorStop(0,'rgba(212,255,58,0.35)');
+  grad.addColorStop(1,'rgba(212,255,58,0)');
+  
+  const datasets = [{
+    label: labelMap[metric],
+    data: vals,
+    borderColor:'#d4ff3a',
+    backgroundColor: grad,
+    fill:true,
+    tension:0.35,
+    borderWidth:2,
+    pointRadius:6,
+    pointBackgroundColor:'#0d0e10',
+    pointBorderColor:'#d4ff3a',
+    pointBorderWidth:2,
+    pointHoverRadius:9,
+    pointHoverBorderWidth:3,
+  }];
+  
+  // Add a dashed annual-avg reference line for Taggd
+  if(isTaggd && annualAvg){
+    datasets.push({
+      label: 'Annual Avg',
+      data: [annualAvg, annualAvg, annualAvg, annualAvg],
+      borderColor: 'rgba(184,179,168,0.7)',
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0,
+      borderWidth: 1.5,
+      borderDash: [5, 4],
+      pointRadius: 0,
+      pointHoverRadius: 0,
+    });
+  }
+  
+  // When Forecast Rev is selected, overlay Budget Rev as a dashed comparison line
+  if(metric === 'fcRev'){
+    const budVals = labels.map(q => totals[q].budRev || 0);
+    datasets.push({
+      label: 'Budget',
+      data: budVals,
+      borderColor: 'rgba(244,197,66,0.8)',
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.35,
+      borderWidth: 1.5,
+      borderDash: [6, 4],
+      pointRadius: 3,
+      pointBackgroundColor: '#0d0e10',
+      pointBorderColor: 'rgba(244,197,66,0.8)',
+      pointBorderWidth: 1.5,
+    });
+  }
+  // When Budget Rev is selected, overlay Forecast as a comparison line
+  if(metric === 'budRev'){
+    const fcVals = labels.map(q => totals[q].fcRev || 0);
+    datasets.push({
+      label: 'Forecast',
+      data: fcVals,
+      borderColor: 'rgba(184,179,168,0.6)',
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: 0.35,
+      borderWidth: 1.5,
+      borderDash: [4, 3],
+      pointRadius: 3,
+      pointBackgroundColor: '#0d0e10',
+      pointBorderColor: 'rgba(184,179,168,0.6)',
+      pointBorderWidth: 1.5,
+    });
+  }
+  
+  trendChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:{duration:800,easing:'easeOutCubic'},
+      layout:{ padding:{ top: 28, right: 18, left: 6, bottom: 6 } },
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#15171a',
+          borderColor:'#3a4047',
+          borderWidth:1,
+          titleColor:'#f4f1ea',
+          bodyColor:'#b8b3a8',
+          padding:12,
+          titleFont:{family:'Fraunces',size:14,style:'italic'},
+          bodyFont:{family:'JetBrains Mono',size:12},
+          filter: item => item.parsed.y !== null,
+          callbacks:{
+            label: c => {
+              const v = c.parsed.y;
+              const dsLabel = c.dataset.label;
+              if(dsLabel === 'Annual Avg') return ' Annual Avg: '+v.toFixed(2)+'x';
+              return ' '+labelMap[metric]+': '+fmtVal(v);
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:'rgba(58,64,71,0.4)',drawTicks:false},
+          ticks:{color:'#7a7468',font:{family:'JetBrains Mono',size:11},padding:10}
+        },
+        y:{
+          grid:{color:'rgba(58,64,71,0.3)',drawTicks:false},
+          ticks:{
+            color:'#7a7468',
+            font:{family:'JetBrains Mono',size:10},
+            padding:10,
+            callback: v => {
+              if(isPct) return (v*100).toFixed(0)+'%';
+              if(isTaggd) return v.toFixed(2)+'x';
+              if(isLakh) return '₹'+fmt.inrLakh(v);
+              if(isCount) return Math.round(v);
+              if(isRevPro) return v.toFixed(2);
+              return '₹'+fmt.inr(v);
+            }
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: 'dataLabels',
+      afterDatasetsDraw(chart){
+        const {ctx} = chart;
+        ctx.save();
+        chart.data.datasets.forEach((ds, di)=>{
+          // Skip the dashed annual-avg reference dataset for data labels
+          if(ds.label === 'Annual Avg' || ds.label === 'Budget' || ds.label === 'Forecast') return;
+          const meta = chart.getDatasetMeta(di);
+          if(meta.hidden) return;
+          meta.data.forEach((pt, i)=>{
+            const v = ds.data[i];
+            if(v === null || v === undefined || !isFinite(v)) return;
+            ctx.font = "600 11px 'JetBrains Mono', monospace";
+            const text = fmtVal(v);
+            const x = pt.x;
+            const y = pt.y - 12;
+            const w = ctx.measureText(text).width + 10;
+            ctx.fillStyle = 'rgba(13,14,16,0.85)';
+            ctx.fillRect(x - w/2, y - 4, w, 18);
+            ctx.strokeStyle = 'rgba(212,255,58,0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x - w/2, y - 4, w, 18);
+            ctx.fillStyle = '#d4ff3a';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(text, x, y + 11);
+          });
+        });
+        // Annual-avg subtitle for Taggd
+        if(isTaggd && annualAvg){
+          ctx.font = "italic 11px 'Fraunces', serif";
+          ctx.fillStyle = '#7a7468';
+          ctx.textAlign = 'right';
+          ctx.fillText('— — —  annual avg '+annualAvg.toFixed(2)+'x', chart.chartArea.right - 4, chart.chartArea.top - 6);
+        }
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+document.getElementById('metricTabs').addEventListener('click', e=>{
+  if(e.target.classList.contains('tab')){
+    document.querySelectorAll('#metricTabs .tab').forEach(t=>t.classList.remove('active'));
+    e.target.classList.add('active');
+    buildTrendChart(e.target.dataset.metric);
+  }
+});
+
+// ============ Top Bars ============
+function buildTopBars(){
+  const sorted = [...RAW].filter(c=>c.Total.rev>0).sort((a,b)=>b.Total.rev-a.Total.rev).slice(0,10);
+  const max = sorted[0].Total.rev;
+  document.getElementById('topBars').innerHTML = sorted.map(c=>{
+    const pct = (c.Total.rev/max)*100;
+    return `<div class="bar-row">
+      <div class="bar-name">${c.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div class="bar-val">₹${fmt.inrLakh(c.Total.rev)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============ Taggd Pro Section ============
+let taggdQoQChart = null;
+function buildTaggd(){
+  const reporting = RAW.filter(c=>c.Total.taggd>0).sort((a,b)=>b.Total.taggd-a.Total.taggd);
+  if(!reporting.length) return;
+  
+  const vals = reporting.map(c=>c.Total.taggd);
+  const avg = vals.reduce((s,v)=>s+v,0)/vals.length;
+  const max = Math.max(...vals);
+  const median = vals.slice().sort((a,b)=>a-b)[Math.floor(vals.length/2)];
+  const top1 = reporting[0];
+  const lowest = reporting[reporting.length-1];
+  
+  // Compute average per quarter (across reporting accounts)
+  const qAvgs = QUARTERS.map(q => totals[q].taggd);
+  const qOverall = totals.Total.taggd;
+  
+  // Headline = annual avg
+  document.getElementById('taggdHeadline').innerHTML = avg.toFixed(2)+'<span class="x-mark">x</span>';
+  
+  // QoQ delta (Q4 vs Q1)
+  const qoqDelta = qAvgs[3] - qAvgs[0];
+  const qoqDeltaPct = qAvgs[0] ? (qoqDelta/qAvgs[0])*100 : 0;
+  
+  // Meta panel — now includes QoQ peak/trough
+  const peakIdx = qAvgs.indexOf(Math.max(...qAvgs));
+  const lowIdx = qAvgs.indexOf(Math.min(...qAvgs));
+  document.getElementById('taggdMeta').innerHTML = `
+    <div class="taggd-meta-item"><div class="lbl">QoQ Peak</div><div class="val">${qAvgs[peakIdx].toFixed(2)}x<span class="sub">${QUARTERS[peakIdx]}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">QoQ Low</div><div class="val">${qAvgs[lowIdx].toFixed(2)}x<span class="sub">${QUARTERS[lowIdx]}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Top performer</div><div class="val">${top1.Total.taggd.toFixed(2)}x<span class="sub">${top1.name.length>14?top1.name.slice(0,14)+'…':top1.name}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Lowest</div><div class="val">${lowest.Total.taggd.toFixed(2)}x<span class="sub">${lowest.name.length>14?lowest.name.slice(0,14)+'…':lowest.name}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Reporting</div><div class="val">${reporting.length}<span class="sub">/ ${RAW.length} accounts</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Q4 vs Q1</div><div class="val">${qoqDeltaPct>=0?'+':''}${qoqDeltaPct.toFixed(1)}%<span class="sub">${qoqDelta>=0?'improving':'declining'}</span></div></div>
+  `;
+  
+  // QoQ Mini Chart
+  const qctx = document.getElementById('taggdQoQChart').getContext('2d');
+  if(taggdQoQChart) taggdQoQChart.destroy();
+  
+  const qgrad = qctx.createLinearGradient(0,0,0,180);
+  qgrad.addColorStop(0,'rgba(212,255,58,0.3)');
+  qgrad.addColorStop(1,'rgba(212,255,58,0)');
+  
+  taggdQoQChart = new Chart(qctx, {
+    type:'line',
+    data:{
+      labels: QUARTERS,
+      datasets: [
+        {
+          label: 'Avg Taggd Pro',
+          data: qAvgs,
+          borderColor:'#d4ff3a',
+          backgroundColor: qgrad,
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 5,
+          pointBackgroundColor: '#0d0e10',
+          pointBorderColor: '#d4ff3a',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+        },
+        {
+          label: 'Annual Avg',
+          data: [qOverall, qOverall, qOverall, qOverall],
+          borderColor: 'rgba(184,179,168,0.5)',
+          fill: false,
+          borderDash: [4, 3],
+          borderWidth: 1.2,
+          pointRadius: 0,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation:{duration:800},
+      layout:{padding:{top:24,right:14,left:4,bottom:4}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#15171a', borderColor:'#3a4047', borderWidth:1,
+          titleColor:'#f4f1ea', bodyColor:'#b8b3a8', padding:10,
+          titleFont:{family:'Fraunces',size:13,style:'italic'},
+          bodyFont:{family:'JetBrains Mono',size:11},
+          callbacks:{
+            label: c => ' '+c.dataset.label+': '+c.parsed.y.toFixed(2)+'x'
+          }
+        }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(58,64,71,0.3)',drawTicks:false}, ticks:{color:'#7a7468',font:{family:'JetBrains Mono',size:10},padding:6} },
+        y:{ grid:{color:'rgba(58,64,71,0.3)',drawTicks:false}, ticks:{color:'#7a7468',font:{family:'JetBrains Mono',size:9},padding:6, callback: v => v.toFixed(2)+'x'} }
+      }
+    },
+    plugins:[{
+      id:'qoqLabels',
+      afterDatasetsDraw(chart){
+        const {ctx} = chart;
+        ctx.save();
+        const ds = chart.data.datasets[0];
+        const meta = chart.getDatasetMeta(0);
+        meta.data.forEach((pt, i)=>{
+          const v = ds.data[i];
+          if(!isFinite(v)) return;
+          const text = v.toFixed(2)+'x';
+          ctx.font = "600 10px 'JetBrains Mono', monospace";
+          const w = ctx.measureText(text).width + 8;
+          const x = pt.x, y = pt.y - 10;
+          ctx.fillStyle = 'rgba(13,14,16,0.9)';
+          ctx.fillRect(x - w/2, y - 4, w, 16);
+          ctx.strokeStyle = 'rgba(212,255,58,0.3)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x - w/2, y - 4, w, 16);
+          ctx.fillStyle = '#d4ff3a';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, x, y + 4);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+  
+  // Ranking bars
+  const avgPct = (avg/max)*100;
+  document.getElementById('taggdBars').innerHTML = reporting.map((c,i)=>{
+    const pct = (c.Total.taggd/max)*100;
+    let cls = 'mid';
+    if(c.Total.taggd >= avg*1.25) cls = 'good';
+    else if(c.Total.taggd < avg*0.75) cls = 'bad';
+    const showAvgLine = i===0;
+    return `<div class="tg-row">
+      <div class="tg-rank">${String(i+1).padStart(2,'0')}</div>
+      <div class="tg-name">${c.name}</div>
+      <div class="tg-track">
+        <div class="tg-fill ${cls}" style="width:${pct}%"></div>
+        ${showAvgLine?`<div class="tg-avg-line" style="left:${avgPct}%"></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ Rev Pro Section ============
+let revProQoQChart = null;
+function buildRevPro(){
+  const reporting = RAW.filter(c=>c.Total.revPro>0).sort((a,b)=>b.Total.revPro-a.Total.revPro);
+  if(!reporting.length){
+    document.getElementById('revProHeadline').textContent = '—';
+    document.getElementById('revProMeta').innerHTML = '<div class="taggd-meta-item"><div class="lbl">No data</div><div class="val">—</div></div>';
+    document.getElementById('revProBars').innerHTML = '';
+    return;
+  }
+  
+  const vals = reporting.map(c=>c.Total.revPro);
+  const avg = vals.reduce((s,v)=>s+v,0)/vals.length;
+  const max = Math.max(...vals);
+  const median = vals.slice().sort((a,b)=>a-b)[Math.floor(vals.length/2)];
+  const top1 = reporting[0];
+  const lowest = reporting[reporting.length-1];
+  
+  // Compute Rev Pro average per quarter
+  const qAvgs = QUARTERS.map(q => totals[q].revPro);
+  const qOverall = avg;
+  
+  document.getElementById('revProHeadline').innerHTML = avg.toFixed(2);
+  
+  const qoqDelta = qAvgs[3] - qAvgs[0];
+  const qoqDeltaPct = qAvgs[0] ? (qoqDelta/qAvgs[0])*100 : 0;
+  
+  const peakIdx = qAvgs.indexOf(Math.max(...qAvgs));
+  const lowIdx = qAvgs.indexOf(Math.min(...qAvgs));
+  document.getElementById('revProMeta').innerHTML = `
+    <div class="taggd-meta-item"><div class="lbl">QoQ Peak</div><div class="val">${qAvgs[peakIdx].toFixed(2)}<span class="sub">${QUARTERS[peakIdx]}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">QoQ Low</div><div class="val">${qAvgs[lowIdx].toFixed(2)}<span class="sub">${QUARTERS[lowIdx]}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Top performer</div><div class="val">${top1.Total.revPro.toFixed(2)}<span class="sub">${top1.name.length>14?top1.name.slice(0,14)+'…':top1.name}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Lowest</div><div class="val">${lowest.Total.revPro.toFixed(2)}<span class="sub">${lowest.name.length>14?lowest.name.slice(0,14)+'…':lowest.name}</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Reporting</div><div class="val">${reporting.length}<span class="sub">/ ${RAW.length} accounts</span></div></div>
+    <div class="taggd-meta-item"><div class="lbl">Q4 vs Q1</div><div class="val">${qoqDeltaPct>=0?'+':''}${qoqDeltaPct.toFixed(1)}%<span class="sub">${qoqDelta>=0?'improving':'declining'}</span></div></div>
+  `;
+  
+  // QoQ Mini Chart
+  const qctx = document.getElementById('revProQoQChart').getContext('2d');
+  if(revProQoQChart) revProQoQChart.destroy();
+  
+  const qgrad = qctx.createLinearGradient(0,0,0,180);
+  qgrad.addColorStop(0,'rgba(212,255,58,0.3)');
+  qgrad.addColorStop(1,'rgba(212,255,58,0)');
+  
+  revProQoQChart = new Chart(qctx, {
+    type:'line',
+    data:{
+      labels: QUARTERS,
+      datasets: [
+        {
+          label: 'Avg Rev Pro',
+          data: qAvgs,
+          borderColor:'#d4ff3a',
+          backgroundColor: qgrad,
+          fill: true,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 5,
+          pointBackgroundColor: '#0d0e10',
+          pointBorderColor: '#d4ff3a',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+        },
+        {
+          label: 'Annual Avg',
+          data: [qOverall, qOverall, qOverall, qOverall],
+          borderColor: 'rgba(184,179,168,0.5)',
+          fill: false,
+          borderDash: [4, 3],
+          borderWidth: 1.2,
+          pointRadius: 0,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation:{duration:800},
+      layout:{padding:{top:24,right:14,left:4,bottom:4}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#15171a', borderColor:'#3a4047', borderWidth:1,
+          titleColor:'#f4f1ea', bodyColor:'#b8b3a8', padding:10,
+          titleFont:{family:'Fraunces',size:13,style:'italic'},
+          bodyFont:{family:'JetBrains Mono',size:11},
+          callbacks:{
+            label: c => ' '+c.dataset.label+': '+c.parsed.y.toFixed(2)
+          }
+        }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(58,64,71,0.3)',drawTicks:false}, ticks:{color:'#7a7468',font:{family:'JetBrains Mono',size:10},padding:6} },
+        y:{ grid:{color:'rgba(58,64,71,0.3)',drawTicks:false}, ticks:{color:'#7a7468',font:{family:'JetBrains Mono',size:9},padding:6, callback: v => v.toFixed(2)} }
+      }
+    },
+    plugins:[{
+      id:'qoqLabelsRP',
+      afterDatasetsDraw(chart){
+        const {ctx} = chart;
+        ctx.save();
+        const ds = chart.data.datasets[0];
+        const meta = chart.getDatasetMeta(0);
+        meta.data.forEach((pt, i)=>{
+          const v = ds.data[i];
+          if(!isFinite(v)) return;
+          const text = v.toFixed(2);
+          ctx.font = "600 10px 'JetBrains Mono', monospace";
+          const w = ctx.measureText(text).width + 8;
+          const x = pt.x, y = pt.y - 10;
+          ctx.fillStyle = 'rgba(13,14,16,0.9)';
+          ctx.fillRect(x - w/2, y - 4, w, 16);
+          ctx.strokeStyle = 'rgba(212,255,58,0.3)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x - w/2, y - 4, w, 16);
+          ctx.fillStyle = '#d4ff3a';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, x, y + 4);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+  
+  // Ranking bars with value chip
+  const avgPct = (avg/max)*100;
+  document.getElementById('revProBars').innerHTML = reporting.map((c,i)=>{
+    const pct = (c.Total.revPro/max)*100;
+    let cls = 'mid';
+    if(c.Total.revPro >= avg*1.25) cls = 'good';
+    else if(c.Total.revPro < avg*0.75) cls = 'bad';
+    const showAvgLine = i===0;
+    return `<div class="tg-row tg-row-with-val">
+      <div class="tg-rank">${String(i+1).padStart(2,'0')}</div>
+      <div class="tg-name">${c.name}</div>
+      <div class="tg-track">
+        <div class="tg-fill ${cls}" style="width:${pct}%"></div>
+        ${showAvgLine?`<div class="tg-avg-line" style="left:${avgPct}%"></div>`:''}
+      </div>
+      <div class="tg-val">${c.Total.revPro.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============ Insights ============
+function buildInsights(){
+  // Top performer
+  const top = [...RAW].sort((a,b)=>b.Total.rev-a.Total.rev)[0];
+  const topShare = (top.Total.rev/totals.Total.rev*100).toFixed(1);
+  
+  // Loss-makers
+  const lossMakers = RAW.filter(c=>c.Total.rev>0 && c.Total.cm > 1);
+  const lossRev = lossMakers.reduce((s,c)=>s+c.Total.rev,0);
+  
+  // QoQ growth (Forecast Rev)
+  const q1Rev = totals.Q1.rev, q4Rev = totals.Q4.rev;
+  const annualGrowth = q1Rev ? ((q4Rev-q1Rev)/q1Rev*100).toFixed(1) : '0';
+  
+  // Budget vs Forecast at annual level
+  const achievement = totals.Total.budRev ? (totals.Total.fcRev/totals.Total.budRev*100) : 0;
+  const variance = totals.Total.fcRev - totals.Total.budRev;
+  
+  // Under-budget accounts: forecast < 85% of budget
+  const underBudget = RAW.filter(c => c.Total.budRev > 0 && (c.Total.fcRev/c.Total.budRev) < 0.85);
+  const underBudgetShortfall = underBudget.reduce((s,c)=>s + (c.Total.budRev - c.Total.fcRev), 0);
+  
+  // CM% direction
+  const cmShift = (totals.Q4.cm - totals.Q1.cm) * 100;
+  const cmDirection = cmShift > 0 ? 'rose' : 'eased';
+  
+  const items = [
+    {tag:'achievement', tagClass: achievement >= 95 ? '' : 'warn', 
+     title: achievement >= 100 ? `Portfolio <em>beat budget</em> by ${(achievement-100).toFixed(1)}%` : `Portfolio at <em>${achievement.toFixed(1)}%</em> of annual budget`,
+     stat: (variance>=0?'+':'')+'₹'+fmt.inrLakh(variance), unit:'variance',
+     body:`Annual forecast of ₹${fmt.inrLakh(totals.Total.fcRev)} against a budget of ₹${fmt.inrLakh(totals.Total.budRev)}. ${variance>=0?'Outperformance':'Shortfall'} of ₹${fmt.inrLakh(Math.abs(variance))}.`},
+    {tag:'concentration', tagClass:'', title:`<em>${top.name}</em> drives ${topShare}% of revenue`,
+     stat:'₹'+fmt.inrLakh(top.Total.rev), unit:'annual fc',
+     body:`Largest account by forecast revenue. CM% at ${fmt.pct(top.Total.cm)}, HC of ${Math.round(top.Total.hc||0)}, Rev Pro at ${(top.Total.revPro||0).toFixed(2)}.`},
+    {tag:'momentum', tagClass:'', title:`Forecast revenue grew <em>${annualGrowth}%</em> Q1 to Q4`,
+     stat: '+₹'+fmt.inrLakh(q4Rev-q1Rev), unit:'absolute',
+     body:`From ₹${fmt.inrLakh(q1Rev)} in Q1 to ₹${fmt.inrLakh(q4Rev)} in Q4. CM% ${cmDirection} ${Math.abs(cmShift).toFixed(1)}pp over the same window.`},
+    {tag:'attention', tagClass:'warn', title:`<em>${underBudget.length}</em> accounts under 85% achievement`,
+     stat:'₹'+fmt.inrLakh(underBudgetShortfall), unit:'shortfall',
+     body:`Accounts: ${underBudget.length ? underBudget.slice(0,4).map(c=>c.name).join(', ')+(underBudget.length>4?', +'+(underBudget.length-4)+' more':''):'None — every account hit at least 85% of its budget.'}.`},
+  ];
+  
+  document.getElementById('insightsGrid').innerHTML = items.map(it=>`
+    <div class="insight">
+      <span class="insight-tag ${it.tagClass}">${it.tag}</span>
+      <h3>${it.title}</h3>
+      <div class="insight-stat">${it.stat}<span class="unit"> ${it.unit}</span></div>
+      <p>${it.body}</p>
+    </div>
+  `).join('');
+}
+
+// ============ Governance Summary ============
+let govSearchTerm = '';
+
+function normalizeStatus(s){
+  // Normalize SLA values: handle typo "Greed" -> "Green", "Not Reported"/"NA"/empty -> "Not Reported"
+  const t = String(s||'').trim().toLowerCase();
+  if(t === 'green' || t === 'greed') return 'Green';
+  if(t === 'amber') return 'Amber';
+  if(t === 'red') return 'Red';
+  if(!t || t === 'na' || t.startsWith('not')) return 'Not Reported';
+  return s;
+}
+
+function buildGovernance(){
+  // Aggregate governance fields across filtered RAW
+  const total = RAW.length;
+  let lyUnb=0, cyUnb=0, collOver=0;
+  let mgrYes=0, phYes=0, fhYes=0;
+  const slaCounts = { Green:0, Amber:0, Red:0, 'Not Reported':0 };
+  const issueCounts = {};
+  let redCount=0, top10Count=0;
+  
+  RAW.forEach(c=>{
+    const g = c.gov || {};
+    lyUnb += g.lyUnbilled || 0;
+    cyUnb += g.cyUnbilled || 0;
+    collOver += g.collOverdue || 0;
+    if(String(g.mgr||'').trim().toLowerCase()==='yes') mgrYes++;
+    if(String(g.phGov||'').trim().toLowerCase()==='yes') phYes++;
+    if(String(g.fnHead||'').trim().toLowerCase()==='yes') fhYes++;
+    const sla = normalizeStatus(g.slaStatus);
+    if(slaCounts.hasOwnProperty(sla)) slaCounts[sla]++;
+    else slaCounts['Not Reported']++;
+    const issue = String(g.issueStatus||'').trim();
+    if(issue){ issueCounts[issue] = (issueCounts[issue]||0) + 1; }
+    if(String(g.redAccount||'').trim().toLowerCase()==='yes') redCount++;
+    if(String(g.top10||'').trim().toLowerCase()==='yes') top10Count++;
+  });
+  
+  // Helper: bar segment for a count
+  const seg = (label, count, cls) => count > 0 ?
+    `<div class="seg ${cls}" style="flex:${count}" title="${label}: ${count}">${count}</div>` : '';
+  
+  // SLA bar
+  const slaTotal = slaCounts.Green + slaCounts.Amber + slaCounts.Red + slaCounts['Not Reported'];
+  const slaBar = slaTotal > 0 ? `
+    <div class="gov-bars">
+      ${seg('Green', slaCounts.Green, 'green')}
+      ${seg('Amber', slaCounts.Amber, 'amber')}
+      ${seg('Red', slaCounts.Red, 'red')}
+      ${seg('Not Reported', slaCounts['Not Reported'], 'grey')}
+    </div>
+    <div class="gov-legend">
+      <span><span class="dot" style="background:var(--good)"></span>Green ${slaCounts.Green}</span>
+      <span><span class="dot" style="background:var(--warn)"></span>Amber ${slaCounts.Amber}</span>
+      <span><span class="dot" style="background:var(--bad)"></span>Red ${slaCounts.Red}</span>
+      <span><span class="dot" style="background:var(--line-2)"></span>NR ${slaCounts['Not Reported']}</span>
+    </div>` : '<div class="gov-sub">No SLA data</div>';
+  
+  // Internal Governance bar (Mgr / PH / FH coverage)
+  const govBar = `
+    <div class="gov-bars">
+      <div class="seg green" style="flex:${mgrYes}" title="Mgr: ${mgrYes}">${mgrYes>3?mgrYes:''}</div>
+      <div class="seg grey" style="flex:${total-mgrYes}" title="Gap: ${total-mgrYes}"></div>
+    </div>
+    <div class="gov-legend">
+      <span>Mgr ${mgrYes}/${total}</span>
+      <span>PH ${phYes}/${total}</span>
+      <span>FH ${fhYes}/${total}</span>
+    </div>`;
+  
+  // Issue Status — show the dominant value(s)
+  const issueEntries = Object.entries(issueCounts).sort((a,b)=>b[1]-a[1]);
+  const noIssues = issueEntries.find(([k,_])=>k.toLowerCase()==='no');
+  const issueOk = noIssues ? noIssues[1] : 0;
+  const issueOpen = total - issueOk;
+  
+  // Cards
+  const cards = [
+    {
+      label: 'Internal Governance',
+      icon: 'i',
+      headline: `${mgrYes}<span class="unit">/ ${total}</span>`,
+      sub: `Manager review · ${(mgrYes/total*100).toFixed(0)}% coverage`,
+      extra: govBar,
+    },
+    {
+      label: 'Last Year Unbilled',
+      icon: 'ii',
+      headline: `₹${fmt.inrLakh(lyUnb)}`,
+      sub: `Carried from FY24-25`,
+      extra: `<div class="gov-sub" style="margin-top:14px">Largest: ${(()=>{
+        const arr = RAW.filter(c=>c.gov && c.gov.lyUnbilled>0).sort((a,b)=>(b.gov.lyUnbilled||0)-(a.gov.lyUnbilled||0))[0];
+        return arr ? arr.name+' ₹'+fmt.inrLakh(arr.gov.lyUnbilled) : '—';
+      })()}</div>`,
+    },
+    {
+      label: 'Current Year Unbilled',
+      icon: 'iii',
+      headline: `₹${fmt.inrLakh(cyUnb)}`,
+      sub: `Open as of report date`,
+      extra: `<div class="gov-sub" style="margin-top:14px">Largest: ${(()=>{
+        const arr = RAW.filter(c=>c.gov && c.gov.cyUnbilled>0).sort((a,b)=>(b.gov.cyUnbilled||0)-(a.gov.cyUnbilled||0))[0];
+        return arr ? arr.name+' ₹'+fmt.inrLakh(arr.gov.cyUnbilled) : '—';
+      })()}</div>`,
+    },
+    {
+      label: 'Collection > 30 Days',
+      icon: 'iv',
+      headline: `₹${fmt.inrLakh(collOver)}`,
+      sub: `Overdue receivables`,
+      extra: `<div class="gov-sub" style="margin-top:14px">Largest: ${(()=>{
+        const arr = RAW.filter(c=>c.gov && c.gov.collOverdue>0).sort((a,b)=>(b.gov.collOverdue||0)-(a.gov.collOverdue||0))[0];
+        return arr ? arr.name+' ₹'+fmt.inrLakh(arr.gov.collOverdue) : '—';
+      })()}</div>`,
+    },
+    {
+      label: 'Issue Status',
+      icon: 'v',
+      headline: `${issueOk}<span class="unit">/ ${total} clean</span>`,
+      sub: issueOpen > 0 ? `${issueOpen} flagged open` : 'No open issues',
+      extra: `<div class="gov-bars">
+        <div class="seg green" style="flex:${issueOk}">${issueOk>3?issueOk:''}</div>
+        ${issueOpen>0?`<div class="seg red" style="flex:${issueOpen}">${issueOpen}</div>`:''}
+      </div>
+      <div class="gov-legend"><span><span class="dot" style="background:var(--good)"></span>Clean ${issueOk}</span>${issueOpen>0?`<span><span class="dot" style="background:var(--bad)"></span>Open ${issueOpen}</span>`:''}</div>`,
+    },
+    {
+      label: 'Red Accounts',
+      icon: 'vi',
+      headline: `${redCount}<span class="unit">/ ${total}</span>`,
+      sub: redCount > 0 ? `${(redCount/total*100).toFixed(0)}% of book` : 'No red flags',
+      extra: `<div class="gov-bars">
+        ${redCount>0?`<div class="seg red" style="flex:${redCount}">${redCount}</div>`:''}
+        <div class="seg grey" style="flex:${total-redCount}">${total-redCount>3?total-redCount:''}</div>
+      </div>
+      <div class="gov-legend"><span><span class="dot" style="background:var(--bad)"></span>Red ${redCount}</span><span><span class="dot" style="background:var(--line-2)"></span>OK ${total-redCount}</span></div>`,
+    },
+    {
+      label: 'SLA Status',
+      icon: 'vii',
+      headline: `${slaCounts.Green}<span class="unit">Green</span>`,
+      sub: `${slaCounts.Red} Red · ${slaCounts.Amber} Amber · ${slaCounts['Not Reported']} NR`,
+      extra: slaBar,
+    },
+    {
+      label: 'Top 10 Accounts',
+      icon: 'viii',
+      headline: `${top10Count}<span class="unit">/ ${total}</span>`,
+      sub: top10Count > 0 ? 'Flagged in source' : 'Not flagged in source file',
+      extra: `<div class="gov-sub" style="margin-top:14px">${top10Count > 0 ? RAW.filter(c=>c.gov && String(c.gov.top10||'').toLowerCase()==='yes').slice(0,3).map(c=>c.name).join(', ') : 'Top by revenue: '+[...RAW].sort((a,b)=>b.Total.rev-a.Total.rev).slice(0,3).map(c=>c.name).join(', ')}</div>`,
+    },
+  ];
+  
+  document.getElementById('govSummary').innerHTML = cards.map(c=>`
+    <div class="gov-card">
+      <div class="gov-label"><span>${c.label}</span><span class="gov-icon">${c.icon}</span></div>
+      <div class="gov-headline">${c.headline}</div>
+      <div class="gov-sub">${c.sub}</div>
+      ${c.extra || ''}
+    </div>
+  `).join('');
+  
+  // Build governance table
+  buildGovTable();
+}
+
+function buildGovTable(){
+  let rows = [...RAW];
+  if(govSearchTerm) rows = rows.filter(c=>c.name.toLowerCase().includes(govSearchTerm.toLowerCase()));
+  // Sort by red first, then by collection overdue desc, then unbilled
+  rows.sort((a,b)=>{
+    const ar = String(a.gov?.redAccount||'').toLowerCase()==='yes' ? 1 : 0;
+    const br = String(b.gov?.redAccount||'').toLowerCase()==='yes' ? 1 : 0;
+    if(br!==ar) return br-ar;
+    return (b.gov?.collOverdue||0) - (a.gov?.collOverdue||0);
+  });
+  
+  const pill = (val, type) => {
+    const v = String(val||'').trim();
+    if(!v || v.toLowerCase()==='na') return '<span class="gov-pill grey">—</span>';
+    const low = v.toLowerCase();
+    let cls = 'grey';
+    if(type==='sla'){
+      const n = normalizeStatus(v);
+      if(n==='Green') cls='green';
+      else if(n==='Amber') cls='amber';
+      else if(n==='Red') cls='red';
+      else cls='grey';
+      return `<span class="gov-pill ${cls}">${n}</span>`;
+    }
+    if(low==='yes'){
+      if(type==='red') cls='red';
+      else cls='yes';
+    } else if(low==='no'){
+      cls='no';
+    }
+    return `<span class="gov-pill ${cls}">${v}</span>`;
+  };
+  
+  const numCell = v => v>0 ? `₹${fmt.inrLakh(v)}` : '—';
+  
+  document.getElementById('govTableBody').innerHTML = rows.map(c=>{
+    const g = c.gov || {};
+    return `<tr>
+      <td>${c.name}</td>
+      <td style="color:var(--ink-3)">${c.region||'—'}</td>
+      <td class="cell-num">${numCell(g.lyUnbilled||0)}</td>
+      <td class="cell-num">${numCell(g.cyUnbilled||0)}</td>
+      <td class="cell-num ${g.collOverdue>0?'cell-neg':''}">${numCell(g.collOverdue||0)}</td>
+      <td>${pill(g.mgr, 'yes')}</td>
+      <td>${pill(g.phGov, 'yes')}</td>
+      <td>${pill(g.fnHead, 'yes')}</td>
+      <td>${pill(g.issueStatus)}</td>
+      <td>${pill(g.redAccount, 'red')}</td>
+      <td>${pill(g.slaStatus, 'sla')}</td>
+      <td>${pill(g.top10, 'yes')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============ Account Table ============
+let sortKey = 'rev', sortDir = -1, currentFilter = 'all', searchTerm = '';
+
+function buildTable(){
+  let rows = [...RAW];
+  if(currentFilter==='lead') rows = rows.filter(c=>c.isLeadership);
+  else if(currentFilter==='op') rows = rows.filter(c=>!c.isLeadership);
+  if(searchTerm) rows = rows.filter(c=>c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  
+  rows.sort((a,b)=>{
+    let av,bv;
+    if(sortKey==='name'){av=a.name;bv=b.name;return sortDir*av.localeCompare(bv)}
+    if(sortKey==='region'){av=a.region||'';bv=b.region||'';return sortDir*av.localeCompare(bv)}
+    if(sortKey==='rev'){av=a.Total.rev;bv=b.Total.rev}
+    else if(sortKey==='budRev'){av=a.Total.budRev;bv=b.Total.budRev}
+    else if(sortKey==='achievement'){av=a.Total.budRev?a.Total.fcRev/a.Total.budRev:0;bv=b.Total.budRev?b.Total.fcRev/b.Total.budRev:0}
+    else if(sortKey==='cm'){av=a.Total.cm;bv=b.Total.cm}
+    else if(sortKey==='ppc'){av=a.Total.ppc;bv=b.Total.ppc}
+    else if(sortKey==='hc'){av=a.Total.hc||0;bv=b.Total.hc||0}
+    else if(sortKey==='revPro'){av=a.Total.revPro;bv=b.Total.revPro}
+    else if(sortKey==='taggd'){av=a.Total.taggd||0;bv=b.Total.taggd||0}
+    else if(sortKey.startsWith('q')){
+      const q = sortKey.toUpperCase();
+      av=a[q].rev;bv=b[q].rev;
+    }
+    return sortDir*(av-bv);
+  });
+  
+  // Compute portfolio Taggd avg (for the row highlight bar)
+  const tgRef = totals.Total.taggd || 1;
+  
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = rows.map(c=>{
+    const cm = c.Total.cm;
+    const cmCls = (cm > 0 && cm <= 1) ? 'cell-pos' : (cm > 1 || cm < 0) ? 'cell-neg' : '';
+    const tg = c.Total.taggd || 0;
+    let tgDisplay = '—';
+    let tgCls = '';
+    if(tg > 0){
+      tgDisplay = tg.toFixed(2)+'x';
+      if(tg >= tgRef * 1.25) tgCls = 'cell-pos';
+      else if(tg < tgRef * 0.75) tgCls = 'cell-neg';
+    }
+    const ach = c.Total.budRev ? (c.Total.fcRev/c.Total.budRev*100) : 0;
+    let achCls = '';
+    if(c.Total.budRev > 0){
+      if(ach >= 100) achCls = 'cell-pos';
+      else if(ach < 85) achCls = 'cell-neg';
+    }
+    const achDisp = c.Total.budRev > 0 ? ach.toFixed(0)+'%' : '—';
+    return `<tr class="${c.isLeadership?'leadership':''}">
+      <td class="client-name">${c.name}</td>
+      <td class="cell-num" style="font-family:'Inter Tight',sans-serif;font-size:11px;color:var(--ink-3)">${c.region||'—'}</td>
+      <td class="cell-num">₹${fmt.inrLakh(c.Total.budRev)}</td>
+      <td class="cell-num">₹${fmt.inrLakh(c.Total.rev)}</td>
+      <td class="cell-num ${achCls}">${achDisp}</td>
+      <td class="cell-num ${cmCls}">${fmt.pct(c.Total.cm)}</td>
+      <td class="cell-num">₹${fmt.inr(c.Total.ppc)}</td>
+      <td class="cell-num">${c.Total.hc ? Math.round(c.Total.hc) : '—'}</td>
+      <td class="cell-num">${c.Total.revPro ? c.Total.revPro.toFixed(2) : '—'}</td>
+      <td class="cell-num ${tgCls}">${tgDisplay}</td>
+      <td class="cell-num">₹${fmt.inrLakh(c.Q1.rev)}</td>
+      <td class="cell-num">₹${fmt.inrLakh(c.Q2.rev)}</td>
+      <td class="cell-num">₹${fmt.inrLakh(c.Q3.rev)}</td>
+      <td class="cell-num">₹${fmt.inrLakh(c.Q4.rev)}</td>
+    </tr>`;
+  }).join('');
+  
+  // header sort indicator
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.sort===sortKey);
+  });
+}
+
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const k = th.dataset.sort;
+    if(sortKey===k) sortDir *= -1;
+    else { sortKey = k; sortDir = k==='name' ? 1 : -1; }
+    buildTable();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', e=>{
+  searchTerm = e.target.value;
+  buildTable();
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    buildTable();
+  });
+});
+
+
+// ============ Data Source Manager ============
+const RAW_ALL = JSON.parse(JSON.stringify(RAW));
+const ORIGINAL_RAW_ALL = JSON.parse(JSON.stringify(RAW));
+let currentRegion = 'all';
+let currentPH = 'all';
+let currentLeader = 'all';
+let selectedAccounts = []; // empty = all; non-empty = explicit multi-select
+let pendingSelectedAccounts = [];
+// Flag filters now work as multi-selects: empty = "all in scope OR no filter applied"
+// To distinguish "filter active (showing only flagged)" from "no filter", use mode:
+//   mode 'off': flag not applied
+//   mode 'all': all accounts in that flag category included
+//   mode 'some': specific subset of accounts in that flag category
+const flagState = {
+  new:   { mode: 'off', selected: [], pending: [] },
+  top10: { mode: 'off', selected: [], pending: [] },
+  red:   { mode: 'off', selected: [], pending: [] },
+};
+let currentFileName = 'CEO_Review.xlsx';
+
+function showToast(msg, type){
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || '');
+  t.textContent = msg;
+  // Click to dismiss
+  t.style.cursor = 'pointer';
+  t.title = 'Click to dismiss';
+  t.onclick = () => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); };
+  document.body.appendChild(t);
+  // Error toasts stay 10s, others 3.5s
+  const dwell = type === 'error' ? 10000 : 3500;
+  setTimeout(()=>{ if(t.parentNode){ t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); } }, dwell);
+}
+
+function getAvailableRegions(){
+  // Show every distinct region value, ordered by count (descending)
+  const regionCounts = {};
+  RAW_ALL.forEach(c => {
+    const r = c.region || 'Unknown';
+    regionCounts[r] = (regionCounts[r] || 0) + 1;
+  });
+  const ordered = Object.entries(regionCounts).sort((a,b)=>{
+    if(b[1] !== a[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0]);
+  });
+  return { regions: ordered, total: RAW_ALL.length };
+}
+
+function getAvailablePHs(){
+  // Show every distinct PH, ordered by count descending, then alphabetical
+  const phCounts = {};
+  RAW_ALL.forEach(c => {
+    const p = String(c.ph || '').trim() || 'Unassigned';
+    phCounts[p] = (phCounts[p] || 0) + 1;
+  });
+  const ordered = Object.entries(phCounts).sort((a,b)=>{
+    if(b[1] !== a[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0]);
+  });
+  return { phs: ordered, total: RAW_ALL.length };
+}
+
+function getAvailableLeaders(){
+  // Distinct Leaders, ordered by count desc
+  const counts = {};
+  RAW_ALL.forEach(c => {
+    const l = String(c.leader || '').trim() || 'Unassigned';
+    counts[l] = (counts[l] || 0) + 1;
+  });
+  const ordered = Object.entries(counts).sort((a,b)=>{
+    if(b[1] !== a[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0]);
+  });
+  return { leaders: ordered, total: RAW_ALL.length };
+}
+
+function buildRegionTabs(){
+  const { regions, total } = getAvailableRegions();
+  const tabsHtml = [`<button class="rs-tab ${currentRegion==='all'?'active':''}" data-region="all">All <span class="rs-count">${total}</span></button>`];
+  regions.forEach(([name,count]) => {
+    tabsHtml.push(`<button class="rs-tab ${currentRegion===name?'active':''}" data-region="${name}">${name} <span class="rs-count">${count}</span></button>`);
+  });
+  document.getElementById('regionTabs').innerHTML = tabsHtml.join('');
+  document.querySelectorAll('#regionTabs .rs-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.classList.contains('active')) return;
+      document.querySelectorAll('#regionTabs .rs-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRegion = btn.dataset.region;
+      refreshDashboard();
+    });
+  });
+}
+
+function buildLeaderTabs(){
+  const { leaders, total } = getAvailableLeaders();
+  const tabsHtml = [`<button class="rs-tab ${currentLeader==='all'?'active':''}" data-leader="all">All <span class="rs-count">${total}</span></button>`];
+  leaders.forEach(([name,count]) => {
+    tabsHtml.push(`<button class="rs-tab ${currentLeader===name?'active':''}" data-leader="${name}">${name} <span class="rs-count">${count}</span></button>`);
+  });
+  document.getElementById('leaderTabs').innerHTML = tabsHtml.join('');
+  document.querySelectorAll('#leaderTabs .rs-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.classList.contains('active')) return;
+      document.querySelectorAll('#leaderTabs .rs-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentLeader = btn.dataset.leader;
+      refreshDashboard();
+    });
+  });
+}
+
+function buildPHDropdown(){
+  const { phs, total } = getAvailablePHs();
+  const sel = document.getElementById('phSelect');
+  const opts = [`<option value="all" ${currentPH==='all'?'selected':''}>All PHs (${total} accounts)</option>`];
+  phs.forEach(([name,count]) => {
+    opts.push(`<option value="${name}" ${currentPH===name?'selected':''}>${name} — ${count} ${count===1?'account':'accounts'}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+  // Update badge
+  const badge = document.getElementById('phCountBadge');
+  if(currentPH === 'all'){
+    badge.textContent = total;
+  } else {
+    const found = phs.find(([n,_])=>n===currentPH);
+    badge.textContent = found ? found[1] : 0;
+  }
+  // Bind change
+  sel.onchange = () => {
+    currentPH = sel.value;
+    refreshDashboard();
+  };
+}
+
+function buildAccountDropdown(){
+  // Account list scoped by region + leader + PH (but NOT by other filters that come after)
+  let pool = currentRegion === 'all' ? RAW_ALL : RAW_ALL.filter(c => c.region === currentRegion);
+  if(currentLeader !== 'all') pool = pool.filter(c => (String(c.leader || '').trim() || 'Unassigned') === currentLeader);
+  if(currentPH !== 'all') pool = pool.filter(c => (String(c.ph || '').trim() || 'Unassigned') === currentPH);
+  
+  const accounts = pool.map(c => ({ name: c.name, region: c.region || '—' })).sort((a,b) => a.name.localeCompare(b.name));
+  
+  // Drop any stale selections that aren't in pool anymore
+  const poolNames = new Set(accounts.map(a => a.name));
+  selectedAccounts = selectedAccounts.filter(n => poolNames.has(n));
+  pendingSelectedAccounts = [...selectedAccounts];
+  
+  renderAccountList();
+  updateAccountButtonLabel();
+}
+
+function renderAccountList(){
+  let pool = currentRegion === 'all' ? RAW_ALL : RAW_ALL.filter(c => c.region === currentRegion);
+  if(currentLeader !== 'all') pool = pool.filter(c => (String(c.leader || '').trim() || 'Unassigned') === currentLeader);
+  if(currentPH !== 'all') pool = pool.filter(c => (String(c.ph || '').trim() || 'Unassigned') === currentPH);
+  
+  const searchTerm = (document.getElementById('accountSelectSearch')?.value || '').toLowerCase();
+  let accounts = pool.map(c => ({ name: c.name, region: c.region || '—' })).sort((a,b) => a.name.localeCompare(b.name));
+  if(searchTerm) accounts = accounts.filter(a => a.name.toLowerCase().includes(searchTerm));
+  
+  const list = document.getElementById('accountSelectList');
+  if(accounts.length === 0){
+    list.innerHTML = `<div class="ms-empty">No accounts match "${searchTerm}"</div>`;
+  } else {
+    list.innerHTML = accounts.map(a => `
+      <div class="ms-item ${pendingSelectedAccounts.includes(a.name) ? 'checked' : ''}" data-name="${a.name.replace(/"/g,'&quot;')}">
+        <span class="ms-cb"></span>
+        <span class="ms-item-name">${a.name}</span>
+        <span class="ms-item-region">${a.region}</span>
+      </div>
+    `).join('');
+    list.querySelectorAll('.ms-item').forEach(el => {
+      el.onclick = () => {
+        const name = el.dataset.name;
+        const idx = pendingSelectedAccounts.indexOf(name);
+        if(idx >= 0) pendingSelectedAccounts.splice(idx, 1);
+        else pendingSelectedAccounts.push(name);
+        el.classList.toggle('checked');
+        updateAccountFooter();
+      };
+    });
+  }
+  updateAccountFooter();
+}
+
+function updateAccountFooter(){
+  const info = document.getElementById('accountSelectInfo');
+  if(!info) return;
+  info.textContent = pendingSelectedAccounts.length === 0 
+    ? 'None selected = all accounts' 
+    : `${pendingSelectedAccounts.length} selected`;
+}
+
+function updateAccountButtonLabel(){
+  const labelEl = document.getElementById('accountSelectLabel');
+  const countEl = document.getElementById('accountSelectCount');
+  const btn = document.getElementById('accountSelectBtn');
+  // Total pool count (after upstream filters)
+  let pool = currentRegion === 'all' ? RAW_ALL : RAW_ALL.filter(c => c.region === currentRegion);
+  if(currentLeader !== 'all') pool = pool.filter(c => (String(c.leader || '').trim() || 'Unassigned') === currentLeader);
+  if(currentPH !== 'all') pool = pool.filter(c => (String(c.ph || '').trim() || 'Unassigned') === currentPH);
+  
+  if(selectedAccounts.length === 0){
+    labelEl.textContent = 'All Accounts';
+    countEl.textContent = pool.length;
+    btn.classList.remove('has-selection');
+  } else if(selectedAccounts.length === 1){
+    labelEl.textContent = selectedAccounts[0];
+    labelEl.title = selectedAccounts[0];
+    countEl.textContent = '1';
+    btn.classList.add('has-selection');
+  } else {
+    labelEl.textContent = `${selectedAccounts.length} accounts`;
+    labelEl.title = selectedAccounts.join(', ');
+    countEl.textContent = selectedAccounts.length;
+    btn.classList.add('has-selection');
+  }
+}
+
+function openAccountPanel(){
+  document.getElementById('accountSelectPanel').classList.add('open');
+  document.getElementById('accountSelectBtn').classList.add('open');
+  // Snapshot current selection into pending so user can cancel by clicking outside
+  pendingSelectedAccounts = [...selectedAccounts];
+  // Clear search and re-render fresh
+  const search = document.getElementById('accountSelectSearch');
+  if(search) { search.value = ''; search.focus(); }
+  renderAccountList();
+}
+
+function closeAccountPanel(){
+  document.getElementById('accountSelectPanel').classList.remove('open');
+  document.getElementById('accountSelectBtn').classList.remove('open');
+}
+
+function bindAccountMultiSelect(){
+  const btn = document.getElementById('accountSelectBtn');
+  const panel = document.getElementById('accountSelectPanel');
+  if(!btn || btn.dataset.bound) return; // bind once
+  btn.dataset.bound = '1';
+  
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    if(panel.classList.contains('open')) closeAccountPanel();
+    else openAccountPanel();
+  };
+  
+  // Stop clicks inside panel from closing it
+  panel.onclick = e => e.stopPropagation();
+  
+  // Search
+  document.getElementById('accountSelectSearch').oninput = renderAccountList;
+  
+  // Clear All
+  document.getElementById('accountSelectClear').onclick = () => {
+    pendingSelectedAccounts = [];
+    renderAccountList();
+  };
+  
+  // Apply
+  document.getElementById('accountSelectApply').onclick = () => {
+    selectedAccounts = [...pendingSelectedAccounts];
+    closeAccountPanel();
+    updateAccountButtonLabel();
+    refreshDashboard();
+  };
+}
+
+// ===== Flag multi-select helpers =====
+
+// Predicate to check if an account matches a given flag category
+function accountMatchesFlag(c, flagKey){
+  if(flagKey === 'new') return c.isNew === true;
+  if(flagKey === 'top10') return String(c.gov?.top10 || '').trim().toLowerCase() === 'yes';
+  if(flagKey === 'red') return String(c.gov?.redAccount || '').trim().toLowerCase() === 'yes';
+  return false;
+}
+
+const FLAG_LABEL = { new: 'New', top10: 'Top 10', red: 'Red' };
+
+// Compute pool of accounts available *before* flag/account filters
+function getUpstreamPool(){
+  let pool = currentRegion === 'all' ? RAW_ALL : RAW_ALL.filter(c => c.region === currentRegion);
+  if(currentLeader !== 'all') pool = pool.filter(c => (String(c.leader || '').trim() || 'Unassigned') === currentLeader);
+  if(currentPH !== 'all') pool = pool.filter(c => (String(c.ph || '').trim() || 'Unassigned') === currentPH);
+  return pool;
+}
+
+function renderFlagList(flagKey){
+  const state = flagState[flagKey];
+  const pool = getUpstreamPool().filter(c => accountMatchesFlag(c, flagKey));
+  const search = (document.getElementById(`${flagKey}SelectSearch`)?.value || '').toLowerCase();
+  let accounts = pool.map(c => ({ name: c.name, region: c.region || '—' })).sort((a,b) => a.name.localeCompare(b.name));
+  if(search) accounts = accounts.filter(a => a.name.toLowerCase().includes(search));
+  
+  const list = document.getElementById(`${flagKey}SelectList`);
+  if(accounts.length === 0){
+    list.innerHTML = `<div class="ms-empty">${search ? `No matches for "${search}"` : `No ${FLAG_LABEL[flagKey]} accounts in current scope`}</div>`;
+  } else {
+    list.innerHTML = accounts.map(a => `
+      <div class="ms-item ${state.pending.includes(a.name) ? 'checked' : ''}" data-name="${a.name.replace(/"/g,'&quot;')}">
+        <span class="ms-cb"></span>
+        <span class="ms-item-name">${a.name}</span>
+        <span class="ms-item-region">${a.region}</span>
+      </div>
+    `).join('');
+    list.querySelectorAll('.ms-item').forEach(el => {
+      el.onclick = () => {
+        const name = el.dataset.name;
+        const idx = state.pending.indexOf(name);
+        if(idx >= 0) state.pending.splice(idx, 1);
+        else state.pending.push(name);
+        el.classList.toggle('checked');
+        updateFlagFooter(flagKey);
+      };
+    });
+  }
+  updateFlagFooter(flagKey);
+}
+
+function updateFlagFooter(flagKey){
+  const info = document.getElementById(`${flagKey}SelectInfo`);
+  if(!info) return;
+  const state = flagState[flagKey];
+  info.textContent = state.pending.length === 0 
+    ? `None selected = all ${FLAG_LABEL[flagKey]} accounts` 
+    : `${state.pending.length} selected`;
+}
+
+function updateFlagButtonLabel(flagKey){
+  const state = flagState[flagKey];
+  const labelEl = document.getElementById(`${flagKey}SelectLabel`);
+  const countEl = document.getElementById(`${flagKey}SelectCount`);
+  const btn = document.getElementById(`${flagKey}SelectBtn`);
+  const totalInScope = getUpstreamPool().filter(c => accountMatchesFlag(c, flagKey)).length;
+  
+  if(state.mode === 'off'){
+    labelEl.textContent = `All ${FLAG_LABEL[flagKey]}`;
+    countEl.textContent = totalInScope;
+    btn.classList.remove('has-selection');
+  } else if(state.mode === 'all'){
+    labelEl.textContent = `All ${FLAG_LABEL[flagKey]} (filter on)`;
+    countEl.textContent = totalInScope;
+    btn.classList.add('has-selection');
+  } else { // 'some'
+    if(state.selected.length === 1){
+      labelEl.textContent = state.selected[0];
+      labelEl.title = state.selected[0];
+    } else {
+      labelEl.textContent = `${state.selected.length} ${FLAG_LABEL[flagKey]}`;
+      labelEl.title = state.selected.join(', ');
+    }
+    countEl.textContent = state.selected.length;
+    btn.classList.add('has-selection');
+  }
+  
+  // Disable button if no accounts in scope and no active selection
+  btn.disabled = totalInScope === 0 && state.mode === 'off';
+}
+
+function openFlagPanel(flagKey){
+  // Close any other open panel
+  document.querySelectorAll('.multi-select-panel.open').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.multi-select-btn.open').forEach(b => b.classList.remove('open'));
+  
+  document.getElementById(`${flagKey}SelectPanel`).classList.add('open');
+  document.getElementById(`${flagKey}SelectBtn`).classList.add('open');
+  flagState[flagKey].pending = [...flagState[flagKey].selected];
+  const search = document.getElementById(`${flagKey}SelectSearch`);
+  if(search) { search.value = ''; search.focus(); }
+  renderFlagList(flagKey);
+}
+
+function closeFlagPanel(flagKey){
+  document.getElementById(`${flagKey}SelectPanel`).classList.remove('open');
+  document.getElementById(`${flagKey}SelectBtn`).classList.remove('open');
+}
+
+function bindFlagMultiSelect(flagKey){
+  const btn = document.getElementById(`${flagKey}SelectBtn`);
+  const panel = document.getElementById(`${flagKey}SelectPanel`);
+  if(!btn || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+  
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    if(btn.disabled) return;
+    if(panel.classList.contains('open')) closeFlagPanel(flagKey);
+    else openFlagPanel(flagKey);
+  };
+  panel.onclick = e => e.stopPropagation();
+  
+  document.getElementById(`${flagKey}SelectSearch`).oninput = () => renderFlagList(flagKey);
+  document.getElementById(`${flagKey}SelectClear`).onclick = () => {
+    flagState[flagKey].pending = [];
+    renderFlagList(flagKey);
+  };
+  document.getElementById(`${flagKey}SelectApply`).onclick = () => {
+    const state = flagState[flagKey];
+    state.selected = [...state.pending];
+    state.mode = state.selected.length === 0 ? 'all' : 'some';
+    closeFlagPanel(flagKey);
+    updateFlagButtonLabel(flagKey);
+    refreshDashboard();
+  };
+}
+
+function buildFlagMultiSelects(){
+  // Idempotent bind + initial label refresh for each flag
+  ['new','top10','red'].forEach(k => {
+    bindFlagMultiSelect(k);
+    updateFlagButtonLabel(k);
+  });
+}
+
+// Keep legacy name so refresh and other call sites still work
+function buildFlagToggles(){ buildFlagMultiSelects(); }
+
+// Outside-click handler for all panels (account + flags)
+function bindMultiSelectOutsideClicks(){
+  if(document.body.dataset.msOutsideBound) return;
+  document.body.dataset.msOutsideBound = '1';
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.multi-select-panel.open').forEach(panel => {
+      const wrap = panel.closest('.ph-dropdown-wrap');
+      if(wrap && !wrap.contains(e.target)){
+        // Cancel pending changes for whichever panel this is
+        const id = panel.id;
+        if(id === 'accountSelectPanel'){
+          pendingSelectedAccounts = [...selectedAccounts];
+        } else {
+          // flag panel - id is like "newSelectPanel"
+          const flagKey = id.replace('SelectPanel','');
+          if(flagState[flagKey]) flagState[flagKey].pending = [...flagState[flagKey].selected];
+        }
+        panel.classList.remove('open');
+        const btn = panel.previousElementSibling;
+        if(btn && btn.classList.contains('multi-select-btn')) btn.classList.remove('open');
+      }
+    });
+  });
+}
+
+function applyRegionFilter(){
+  // Apply region, leader, PH, account, and flag filters in sequence
+  let filtered = currentRegion === 'all' ? RAW_ALL : RAW_ALL.filter(c => c.region === currentRegion);
+  if(currentLeader !== 'all'){
+    filtered = filtered.filter(c => (String(c.leader || '').trim() || 'Unassigned') === currentLeader);
+  }
+  if(currentPH !== 'all'){
+    filtered = filtered.filter(c => (String(c.ph || '').trim() || 'Unassigned') === currentPH);
+  }
+  if(selectedAccounts.length > 0){
+    const sel = new Set(selectedAccounts);
+    filtered = filtered.filter(c => sel.has(c.name));
+  }
+  // Flag filters: each can be off / all-in-category / specific subset
+  ['new','top10','red'].forEach(flagKey => {
+    const state = flagState[flagKey];
+    if(state.mode === 'off') return;
+    if(state.mode === 'all'){
+      // Keep only accounts matching the flag
+      filtered = filtered.filter(c => accountMatchesFlag(c, flagKey));
+    } else { // 'some'
+      const sel = new Set(state.selected);
+      filtered = filtered.filter(c => accountMatchesFlag(c, flagKey) && sel.has(c.name));
+    }
+  });
+  RAW.length = 0;
+  filtered.forEach(c => RAW.push(c));
+}
+
+function formatTimestamp(d){
+  // Format: "08 May 2026, 14:32 IST" — clear and unambiguous
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = months[d.getMonth()];
+  const yy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mn = String(d.getMinutes()).padStart(2,'0');
+  return `${dd} ${mm} ${yy} · ${hh}:${mn}`;
+}
+
+function setUpdatedTimestamp(d){
+  const stamp = d || new Date();
+  const el = document.getElementById('updatedValue');
+  if(el) el.textContent = formatTimestamp(stamp);
+}
+
+function updateDataSourceStatus(){
+  // Write dsStatus once, preserving the dsCount id so subsequent calls don't fail.
+  // Previously a separate dsCount write ran before this line and worked on first call, 
+  // but innerHTML replacement here removed dsCount from the DOM, causing a null error
+  // on subsequent calls (e.g. after a file upload).
+  document.getElementById('dsStatus').innerHTML = `Loaded from <strong>${currentFileName}</strong> · <strong id="dsCount">${RAW_ALL.length}</strong> accounts`;
+  // Update masthead region label based on view
+  const regionLabel = document.getElementById('regionLabel');
+  const brandLabel = document.getElementById('brandRegionLabel');
+  if(regionLabel && brandLabel){
+    if(currentRegion === 'all'){
+      regionLabel.textContent = 'All Regions';
+      brandLabel.textContent = 'CEO Review';
+    } else {
+      regionLabel.textContent = currentRegion;
+      brandLabel.textContent = currentRegion + ' View';
+    }
+  }
+  const activeNow = RAW.filter(c=>c.Total.rev > 0).length;
+  const accountsEl = document.getElementById('meta-accounts');
+  const activeEl = document.getElementById('meta-active');
+  if(accountsEl) accountsEl.textContent = RAW.length;
+  if(activeEl) activeEl.textContent = activeNow;
+}
+
+function refreshDashboard(){
+  // Re-apply region filter (RAW = filtered subset of RAW_ALL)
+  applyRegionFilter();
+  // Re-alias rev and recompute CM% on the filtered slice (idempotent)
+  RAW.forEach(c => {
+    ['Q1','Q2','Q3','Q4','Total'].forEach(q => {
+      if(!c[q]) return;
+      c[q].rev = c[q].fcRev || 0;
+      c[q].cm = c[q].rev ? c[q].cost / c[q].rev : 0;
+    });
+    // Backfill Total.revPro from simple 4-quarter average (including zeros)
+    const qRP = ['Q1','Q2','Q3','Q4'].map(q => c[q]?.revPro || 0);
+    c.Total.revPro = qRP.reduce((s,v)=>s+v,0) / 4;
+    // Derive isNew flag from Account Status column (preferred), fall back to heuristic
+    if(c.accountStatus){
+      c.isNew = c.accountStatus.toLowerCase().includes('new');
+    } else {
+      c.isNew = (c.Q1.fcRev === 0) && ((c.Q2.fcRev > 0) || (c.Q3.fcRev > 0) || (c.Q4.fcRev > 0));
+    }
+  });
+  // Recompute totals (mutate in place so closures referencing `totals` still see latest)
+  Object.keys(totals).forEach(k => delete totals[k]);
+  QUARTERS.concat(['Total']).forEach(q=>{
+    let budRev=0,fcRev=0,cost=0,hc=0,ppcSum=0,ppcN=0,rpSum=0,rpN=0,tgSum=0,tgN=0,rphSum=0,rphN=0;
+    RAW.forEach(c=>{
+      if(!c[q]) return;
+      budRev += c[q].budRev || 0;
+      fcRev += c[q].fcRev || 0;
+      cost += c[q].cost || 0;
+      hc += c[q].hc || 0;
+      if(c[q].ppc>0){ppcSum+=c[q].ppc;ppcN++}
+      if(c[q].revPro>0){rpSum+=c[q].revPro;rpN++}
+      if(c[q].taggd>0){tgSum+=c[q].taggd;tgN++}
+      if(c[q].rph>0){rphSum+=c[q].rph;rphN++}
+    });
+    totals[q] = {
+      budRev, fcRev, cost, hc,
+      rev: fcRev,
+      cm: fcRev ? cost/fcRev : 0,
+      ppc: ppcN ? ppcSum/ppcN : 0,
+      revPro: rpN ? rpSum/rpN : 0,
+      rph: rphN ? rphSum/rphN : 0,
+      taggd: tgN ? tgSum/tgN : 0,
+      taggdAccounts: tgN,
+      achievement: budRev ? fcRev/budRev : 0,
+    };
+  });
+  // re-render every section (only if there's data)
+  if(RAW.length === 0){
+    showToast('No accounts in this region view.', 'error');
+    return;
+  }
+  // Defensive: wrap each section in try/catch so one failure doesn't break the rest.
+  const safeCall = (name, fn) => {
+    try { fn(); } catch(e) {
+      console.error(`[${name}]`, e);
+      showToast(`Refresh issue in ${name}: ${e.message}`, 'error');
+    }
+  };
+  safeCall('KPIs', buildKPIs);
+  safeCall('Quarters', buildQuarters);
+  const activeMetric = document.querySelector('#metricTabs .tab.active')?.dataset.metric || 'budRev';
+  safeCall('Trend chart', () => buildTrendChart(activeMetric));
+  safeCall('Top bars', buildTopBars);
+  safeCall('Taggd section', buildTaggd);
+  safeCall('Rev Pro section', buildRevPro);
+  safeCall('Insights', buildInsights);
+  safeCall('Governance', buildGovernance);
+  safeCall('Account table', buildTable);
+  safeCall('Status', updateDataSourceStatus);
+  // Rebuild filter UIs so counts and dropdowns reflect the current scope
+  safeCall('PH dropdown', buildPHDropdown);
+  safeCall('Account dropdown', buildAccountDropdown);
+  safeCall('Flag toggles', buildFlagToggles);
+}
+
+function num(v){
+  if(v===null || v===undefined || v==='—') return 0;
+  const n = parseFloat(v);
+  return isFinite(n) ? n : 0;
+}
+
+function parseCEOReviewSheet(sheet){
+  // CEO Review column map (per row 2 sub-headers):
+  // 0=Clients, 1=Leaders, 2=PH, 3=Account Status, 4=Region
+  // Q1: 6=BudRev 7=FcRev 8=Cost 9=CM% 10=PPC 11=HC 12=RPH 13=SrcMix 14=Taggd 15=RevPro
+  // Q2: 17..26 (offset +11 from Q1)
+  // Q3: 28..37
+  // Q4: 39..48
+  // Total: 50=BudRev 51=Rev 52=Cost 53=CM% 54=PPC 55=HC 56=RPH 57=SrcMix 58=Taggd 59=RevPro
+  // Governance: 61=Mgr 62=PH 63=FnHead 65=LYUnb 67=CYUnb 69=Coll 71=Issue 73=Red 75=SLA 77=Top10
+  const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null});
+  if(rows.length < 3) throw new Error('Sheet has too few rows. Expected header rows 1-2 and data from row 3.');
+  
+  const h2 = rows[1];
+  const expected = ['Clients','Leaders','PH','Account Status','Region'];
+  for(let i=0;i<expected.length;i++){
+    if(!h2[i] || String(h2[i]).trim().toLowerCase() !== expected[i].toLowerCase()){
+      throw new Error(`Column ${i+1} expected "${expected[i]}", found "${h2[i]||'(empty)'}". File structure may have changed.`);
+    }
+  }
+  // Validate Q1 metric headers
+  const q1Expected = ['Budget Rev','Forecast Rev','Cost','CM%','PPC','HC'];
+  for(let i=0;i<q1Expected.length;i++){
+    const got = h2[6+i];
+    if(!got || String(got).trim().toLowerCase() !== q1Expected[i].toLowerCase()){
+      throw new Error(`Q1 column ${i+1} expected "${q1Expected[i]}", found "${got||'(empty)'}".`);
+    }
+  }
+  
+  const clients = [];
+  for(let r=2; r<rows.length; r++){
+    const row = rows[r];
+    if(!row || !row[0]) continue;
+    const name = String(row[0]).trim();
+    if(!name) continue;
+    
+    const c = {
+      name,
+      leader: row[1] || '',
+      ph: row[2] || '',
+      accountStatus: String(row[3]||'').trim(),
+      region: row[4] || 'Unknown',
+      isLeadership: name.includes('Leadership'),
+      Q1: {budRev:num(row[6]),  fcRev:num(row[7]),  cost:num(row[8]),  cm:num(row[9]),  ppc:num(row[10]), hc:num(row[11]), rph:num(row[12]), taggd:num(row[14]), revPro:num(row[15])},
+      Q2: {budRev:num(row[17]), fcRev:num(row[18]), cost:num(row[19]), cm:num(row[20]), ppc:num(row[21]), hc:num(row[22]), rph:num(row[23]), taggd:num(row[25]), revPro:num(row[26])},
+      Q3: {budRev:num(row[28]), fcRev:num(row[29]), cost:num(row[30]), cm:num(row[31]), ppc:num(row[32]), hc:num(row[33]), rph:num(row[34]), taggd:num(row[36]), revPro:num(row[37])},
+      Q4: {budRev:num(row[39]), fcRev:num(row[40]), cost:num(row[41]), cm:num(row[42]), ppc:num(row[43]), hc:num(row[44]), rph:num(row[45]), taggd:num(row[47]), revPro:num(row[48])},
+      Total: {budRev:num(row[50]), fcRev:num(row[51]), cost:num(row[52]), cm:num(row[53]), ppc:num(row[54]), hc:num(row[55]), rph:num(row[56]), revPro:num(row[59]), taggd:num(row[58])},
+      gov: {
+        mgr: String(row[61]||'').trim(),
+        phGov: String(row[62]||'').trim(),
+        fnHead: String(row[63]||'').trim(),
+        lyUnbilled: num(row[65]),
+        cyUnbilled: num(row[67]),
+        collOverdue: num(row[69]),
+        issueStatus: String(row[71]||'').trim(),
+        redAccount: String(row[73]||'').trim(),
+        slaStatus: String(row[75]||'').trim(),
+        top10: String(row[77]||'').trim(),
+      },
+    };
+    clients.push(c);
+  }
+  if(!clients.length) throw new Error('No data rows found. Check that data starts from row 3.');
+  return clients;
+}
+
+function triggerFileLoad(label){
+  document.getElementById('fileInput').click();
+}
+
+function handleFileUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  console.log('[Upload] Starting:', file.name, 'size:', file.size);
+  showToast(`Reading ${file.name}…`, 'success');
+  
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      console.log('[Upload] File read into memory, parsing…');
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      console.log('[Upload] Sheets in workbook:', wb.SheetNames);
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const parsed = parseCEOReviewSheet(sheet);
+      console.log('[Upload] Parsed', parsed.length, 'accounts. First account:', parsed[0]?.name);
+      
+      // Replace entire RAW_ALL
+      RAW_ALL.length = 0;
+      parsed.forEach(c => RAW_ALL.push(c));
+      console.log('[Upload] RAW_ALL now has', RAW_ALL.length, 'accounts');
+      
+      currentFileName = file.name;
+      currentRegion = 'all';
+      currentPH = 'all';
+      currentLeader = 'all';
+      selectedAccounts = [];
+      pendingSelectedAccounts = [];
+      ['new','top10','red'].forEach(k => { flagState[k].mode = 'off'; flagState[k].selected = []; flagState[k].pending = []; });
+      
+      console.log('[Upload] Calling buildRegionTabs…');
+      buildRegionTabs();
+      console.log('[Upload] Calling buildLeaderTabs…');
+      buildLeaderTabs();
+      console.log('[Upload] Calling buildPHDropdown…');
+      buildPHDropdown();
+      console.log('[Upload] Calling buildAccountDropdown…');
+      buildAccountDropdown();
+      console.log('[Upload] Calling buildFlagToggles…');
+      buildFlagToggles();
+      console.log('[Upload] Calling refreshDashboard…');
+      refreshDashboard();
+      console.log('[Upload] refreshDashboard complete. totals.Total.fcRev =', totals?.Total?.fcRev);
+      
+      setUpdatedTimestamp();
+      showToast(`Loaded ${parsed.length} accounts from ${file.name}`, 'success');
+    } catch(err){
+      console.error('[Upload] ERROR at step:', err);
+      showToast(`Upload error: ${err.message}`, 'error');
+    }
+  };
+  reader.onerror = function(err){ 
+    console.error('[Upload] FileReader error:', err);
+    showToast('Could not read file.','error'); 
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
+function resetData(){
+  RAW_ALL.length = 0;
+  ORIGINAL_RAW_ALL.forEach(c => RAW_ALL.push(JSON.parse(JSON.stringify(c))));
+  currentFileName = 'CEO_Review.xlsx';
+  currentRegion = 'all';
+  currentPH = 'all';
+  currentLeader = 'all';
+  selectedAccounts = [];
+  pendingSelectedAccounts = [];
+  ['new','top10','red'].forEach(k => { flagState[k].mode = 'off'; flagState[k].selected = []; flagState[k].pending = []; });
+  buildRegionTabs();
+  buildLeaderTabs();
+  buildPHDropdown();
+  buildAccountDropdown();
+  buildFlagToggles();
+  refreshDashboard();
+  showToast('Reset to original data', 'success');
+}
+
+// Initial setup
+buildRegionTabs();
+buildLeaderTabs();
+buildPHDropdown();
+buildAccountDropdown();
+buildFlagToggles();
+bindAccountMultiSelect();
+bindMultiSelectOutsideClicks();
+
+// Initial filter & status
+applyRegionFilter();
+updateDataSourceStatus();
+setUpdatedTimestamp();
+
+// ============ INIT ============
+buildKPIs();
+buildQuarters();
+buildTrendChart('budRev');
+buildTopBars();
+buildTaggd();
+buildRevPro();
+buildInsights();
+buildGovernance();
+buildTable();
+
+// Governance table search
+document.getElementById('govSearchInput')?.addEventListener('input', e => {
+  govSearchTerm = e.target.value;
+  buildGovTable();
+});
+</script>
+</body>
+</html>
